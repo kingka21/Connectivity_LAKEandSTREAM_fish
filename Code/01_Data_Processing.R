@@ -8,14 +8,15 @@ library(rgdal)
 library(sp)
 library(dplyr)
 library(raster)
+library(ggplot2)
 
 #------ Step 1: Merge fish data with LAGOS -------
 
 # Read SHAPEFILE.shp from the LAGOS database 
 lakes_shape<- readOGR(dsn = "/Users/katelynking/Desktop/LAGOS_NE_All_Lakes_4ha", layer = "LAGOS_NE_All_Lakes_4ha")
 
-# Michigan fish data from 2007 
-MIdata <- read.csv("/Users/katelynking/Desktop/MSU Research/Chap 2 Fish/Maggie_Sophie work/Michigan_data_from_2007.csv", header = TRUE)
+# Michigan fish data from MI 
+MIdata <- read.csv("/Users/katelynking/Desktop/Chap 2 Fish/Maggie_Sophie work/Michigan_data_from_2007.csv", header = TRUE)
 MIpoints<-dplyr::select(MIdata, LAKE_CODE, LAT_DD, LONG_DD)
 MIpoints<- MIpoints[!duplicated(paste(MIpoints$LAKE_CODE)),] #select only one row of each lake
 MIpoints<-MIpoints[!(is.na(MIpoints$LAT_DD)),] #get rid of two lakes that don't have lat/long
@@ -41,6 +42,46 @@ only.MI.fish$LAKE_CODE<-paste(MIpoints$LAKE_CODE)
 
 #investigate lakes that did not have matches n= 4
 no.match<-only.MI.fish[is.na(only.MI.fish$ComID),] 
+no.matchlakes<-filter(MIpoints, LAKE_CODE == "48_621" | LAKE_CODE == "63_2" | LAKE_CODE == "48_485" | LAKE_CODE == "48_622")
+x <- no.matchlakes$LONG_DD
+y <- no.matchlakes$LAT_DD
+coords<-data.frame(x=x,y=y)
+prj <- CRS("+proj=longlat +datum=NAD83")
+lake.ll <- SpatialPoints(coords, proj4string=prj)   
+
+prjnew <- CRS(" +proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs
+              +ellps=GRS80 +towgs84=0,0,0")
+nomatch.aea <- spTransform(lake.ll, prjnew)
+library(mapview)
+mapView(nomatch.aea)
+
+#use the hydrolinks package to link the lakes to NHD hires
+library(hydrolinks)
+linked_lakes<-link_to_waterbodies(no.matchlakes$LAT_DD, no.matchlakes$LONG_DD, no.matchlakes$LAKE_CODE, "nhdh")
+unlinked<-subset(no.matchlakes, !(LAKE_CODE %in% linked_lakes$MATCH_ID))
+
+#try to match the unlinked (this point pops up right at the river mouth and lake )
+linked_2 = link_to_waterbodies(unlinked$LAT_DD, unlinked$LONG_DD, unlinked$LAKE_CODE, dataset = 'nhdh', buffer = 30)
+
+#stack the two sets 
+linked_lakes<-gtools::smartbind(linked_2, linked_lakes)
+
+#link the nhdh perm identifiers to LAGOS iws_nhhdid ## 3 of the lakes are less than 4 ha so we don't have LAGOS data for them. 
+lagosinfo<-data.frame(lg$iws)
+newlagosjoin<-left_join(linked_lakes, lagosinfo, by=c("permanent_"="iws_nhdid"))
+only.MI.fish<-rename(only.MI.fish, permanent_ = Permanent_)
+only.MI.fish<-rename(only.MI.fish, lagoslakeid = lagoslakei)
+newlagosjoin<-rename(newlagosjoin, LAKE_CODE = MATCH_ID)
+
+unlinkedcodes<-dplyr::select(newlagosjoin, permanent_, lagoslakeid, LAKE_CODE)
+datacodes<-dplyr::select(only.MI.fish, permanent_, lagoslakeid, LAKE_CODE)
+unlinkedcodes$permanent_<-as.factor(unlinkedcodes$permanent_)
+unlinkedcodes$lagoslakeid<-as.factor(unlinkedcodes$lagoslakeid)
+
+only.MI.fish<-gtools::smartbind(unlinkedcodes, datacodes)
+
+#get rid of NAs (93 lakes left) 
+only.MI.fish<-only.MI.fish[!(is.na(only.MI.fish$lagoslakeid)),]
 
 #------ Step 2: calculate fish species richness -------
 
@@ -94,18 +135,10 @@ depth <- data.frame(lagoslakeid=lg$lakes_limno$lagoslakeid,
                     maxdepth_m=lg$lakes_limno$maxdepth,
                     meandepth_m=lg$lakes_limno$meandepth)
 
-# bring in expanded depth dataset
-#expanded_depth <- read.csv("data/lakesnodepth_6.15.18 - lakesnodepth_27Jun17-EDIT.csv",
- #                          stringsAsFactors = FALSE)
-#expanded_depth <- select(expanded_depth, lagoslakeid, ex_maxdepth_m = NEW.maxdepth..meters.)
-
-#depth <- dplyr::left_join(depth, expanded_depth, by = "lagoslakeid")
-#depth$maxdepth_m[is.na(depth$maxdepth_m) & !is.na(depth$ex_maxdepth_m)] <-
- # depth$ex_maxdepth_m[is.na(depth$maxdepth_m) & !is.na(depth$ex_maxdepth_m)]
-#depth <- dplyr::select(depth, -ex_maxdepth_m)
-
 #lake area, perim, sdf, lat, long, elevation, and all ids
 lake_morphometry <- data.frame(lagoslakeid=lg$locus$lagoslakeid,
+                               HU4_ZoneID=lg$locus$hu4_zoneid,
+                               HU6_ZoneID=lg$locus$hu6_zoneid,
                                nhd_lat=lg$locus$nhd_lat,
                                nhd_long=lg$locus$nhd_long,
                                lakearea_ha=lg$locus$lake_area_ha,
@@ -183,26 +216,137 @@ local_preds <- left_join(lake_morphometry, depth, by = "lagoslakeid") %>%
 hu4_preds <- left_join(HU4_climate, HU4_conn, by = "HU4_ZoneID") %>%
   left_join(HU4_LULC, by = "HU4_ZoneID") 
 
-## Merge LAGOS to MI lakes (96 lakes but 4 of them didn't match LAGOS)
-local_preds$lagoslakei<-as.factor(local_preds$lagoslakeid)
-fish.local<-left_join(fish.LAGOS, local_preds, by = 'lagoslakei')
+## Merge LAGOS to MI lakes 
+local_preds$lagoslakeid<-as.factor(local_preds$lagoslakeid)
+fish.local<-left_join(fish.LAGOS, local_preds, by = 'lagoslakeid')
 
 MI.fish.LAGOS<-left_join(fish.local, hu4_preds, by = 'HU4_ZoneID')
 
-#get rid of NAs
-MI.fish.LAGOS<-MI.fish.LAGOS[!(is.na(MI.fish.LAGOS$ComID)),]
+#plot to make sure join was correct
+ggplot() + 
+  geom_point(data=MI.fish.LAGOS, aes(x=nhd_long, y=nhd_lat))
+
+#add reservoir and natural lake data 
+#lakes<- read.csv("/Users/katelynking/Desktop/mi_nl_ll.csv", header=TRUE)
+
+#newfish<-dplyr::left_join(MI.fish.LAGOS, lakes, by= "lagoslakeid")
+
 
 ##pull out only columns for initial model development 
-fish.data<-dplyr::select(MI.fish.LAGOS, lakearea_km2, elevation_m, LakeConnec, lagoslakei, 
-                         HU4_ZoneID, richness, nhd_lat, nhd_long, lake_sdf, 
-                         iws_nlcd2006_wet, iws_nlcd2006_agr, iws_nlcd2006_for, iws_nlcd2006_urb, iws_roaddensity_mperha,
-                         iws_upstream_lakes_4ha_area_ha, iws_wlconnections_area_ha, iws_streamdensity_mperha,
-                         prism_precip_mean, prism_temp_mean, 
-                         hu4_streamdensity_mperha,hu4_lakes_area_ha,hu4_wetlands_area_ha, 
-                         hu4_nlcd2006_urb, hu4_nlcd2006_for, hu4_nlcd2006_agr, hu4_nlcd2006_wet, hu4_roaddensity_mperha)
+#fish.data<-dplyr::select(MI.fish.LAGOS, lakearea_km2, elevation_m, LakeConnec, lagoslakei, 
+ #                        HU4_ZoneID, richness, nhd_lat, nhd_long, lake_sdf, 
+  #                       iws_nlcd2006_wet, iws_nlcd2006_agr, iws_nlcd2006_for, iws_nlcd2006_urb, iws_roaddensity_mperha,
+   #                      iws_upstream_lakes_4ha_area_ha, iws_wlconnections_area_ha, iws_streamdensity_mperha,
+    #                     prism_precip_mean, prism_temp_mean, 
+     #                    hu4_streamdensity_mperha,hu4_lakes_area_ha,hu4_wetlands_area_ha, 
+      #                   hu4_nlcd2006_urb, hu4_nlcd2006_for, hu4_nlcd2006_agr, hu4_nlcd2006_wet, hu4_roaddensity_mperha)
 
-write.csv(fish.data, "Data/MI_lake_data.csv", row.names = FALSE)
+write.csv(MI.fish.LAGOS, "Data/MI_lake_data.csv", row.names = FALSE)
 
-fish.data<-read.csv('Data/MI_lake_data.csv')
+#fish.data<-read.csv('Data/MI_lake_data.csv')
 
-#------ Step 4: standardize and transform predictor values from LAGOS -------
+#------ Step 4: calculate beta diversity for HUC4s and HUC6s 
+library(vegan)
+#filter to just columns we need
+MIdata1<-dplyr::select(MIdata, LAKE_CODE, SPP_CODE, Total_Number_Caught) 
+
+#group by lake and species to add up all the species for a lake
+MIdata2 <-MIdata1 %>% group_by(LAKE_CODE, SPP_CODE) %>% summarise(total=sum(Total_Number_Caught))
+MIdata3<-tidyr::spread(MIdata2, SPP_CODE, total)
+
+HUC_codes<-dplyr::select(MI.fish.LAGOS, LAKE_CODE, lagoslakeid, HU4_ZoneID, HU6_ZoneID)
+MIdata4<-dplyr::left_join(MIdata3, HUC_codes)
+MIdata4[is.na(MIdata4)] <- 0 #NAs to 0 
+MIdata4<-MIdata4[!(is.na(MIdata4$HU6_ZoneID)),] #get rid of 5 lakes that didn't match to LAGOS
+
+# how have others calc beta div - selected regions? 
+#8 total HUC4s and 10 total HUC 6 
+
+### create a function to calculate beta diversity average for a region
+ calcbeta<-function(x) { # x = a dataframe   
+   new<- subset(x, select = -c(LAKE_CODE, lagoslakeid, HU4_ZoneID, HU6_ZoneID))
+   #dissimilarity
+   dis<-vegdist(new, "bray", binary = TRUE) 
+   #average dissimilarity
+   avg<-mean(dis)
+   return(avg)
+ }
+ 
+# loop to run dissimilarity on all HUCs 
+HUC_string <-unique(MIdata4$HU4_ZoneID)
+HUC_string<-list("HU4_31", "HU4_30", "HU4_40", "HU4_37", "HU4_32", "HU4_24", "HU4_41", "HU4_39")
+ 
+output_df <- data.frame(HU4_ZoneID=NA, beta=NA)            
+for (i in 1:8) {
+  sub<-subset(MIdata4, HU4_ZoneID == HUC_string[i] )
+  beta<-calcbeta(sub)
+  output_df[i,1]=HUC_string[i]
+  output_df[i,2]=beta
+} 
+ 
+MI.fish_beta <-left_join(MI.fish.LAGOS, output_df, by = 'HU4_ZoneID')
+
+## compare alpha and beta diversity (Pool et al 2014)
+ggplot(data = MI.fish_beta, (aes(x = richness, y = beta ))) + geom_point() +
+  geom_smooth(method='lm') 
+
+## bar graph of the disimilarity values within each HUC to compare distribution (left skewed in the Roden 2018 paper)
+
+## making maps 
+#base map of michigan 
+usa<-map_data("usa")  #pull out the usa map
+states<-map_data("state")  #pull out the states maps 
+MImap <- subset(states, region %in% c("michigan")) # and within that select michigan 
+p<-ggplot(data = MImap) + 
+  geom_polygon(aes(x = long, y = lat, group = group), fill = "white", color = "black") + #this fill MI white and outline is black
+  coord_fixed(1.3) 
+
+#map of beta diversity 
+p + 
+  geom_point(data=MI.fish_beta, aes(x=nhd_long, y=nhd_lat, colour = c(beta))) + scale_colour_gradient(low = "yellow", high = "darkblue") 
+
+#map of alpha diversity 
+p + 
+  geom_point(data=MI.fish_beta, aes(x=nhd_long, y=nhd_lat, colour = c(richness))) + scale_colour_gradient(low = "yellow", high = "darkblue") 
+
+####### HUC4s ######################
+#bring in HU4 polygons for visual 
+HU4.poly<-readOGR(dsn = "/Users/katelynking/Desktop/HU4", layer = "HU4")
+crs(HU4.poly) #shows me the projection of the shapefiles so that I can project the same to the points 
+
+prjnew <- CRS(" +proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs
+              +ellps=GRS80 +towgs84=0,0,0")
+
+####change to an sf object   
+sf_HU4<-sf::st_as_sf(HU4.poly)
+
+#have to have the zone id in there every time for this to work 
+HU4MI<-dplyr::filter(sf_HU4, ZoneID == "HU4_24" | ZoneID == "HU4_31" | ZoneID =="HU4_30"|ZoneID == "HU4_37"|ZoneID =="HU4_40" |ZoneID =="HU4_39" |ZoneID =="HU4_32"|ZoneID == "HU4_41" )  
+#convert it back to a spatial polygons data frame
+HU4MI.sp<-as(HU4MI, "Spatial")
+crs(HU4MI.sp)
+plot(HU4MI.sp)
+
+ggplot(data = HU4MI.sp) + 
+  geom_polygon(aes(x = long, y = lat, group = group), fill = factor(ZoneID), color = "black") + #this fill MI white and outline is black
+  coord_fixed(1.3) 
+
+## crop one polygon to another extent 
+library(raster) 
+MImap.sp<- SpatialPolygons(MImap, pO=MImap$order, proj4string=prjnew) 
+
+MImap.sp<-spTransform(MImap, prjnew)
+out <- crop(HU4MI.sp, MImap)
+
+#Marion et al. 2017: If we denote the number of species shared between two sites as a and the numbers of unique species (not shared) as b and c, 
+#then S = a + b + c and α = (2 a + b + c)/2 so that β_w = (b+c)/(2 a + b + c).
+#This is the Sørensen dissimilarity as defined in vegan function vegdist with argument binary = TRUE. 
+## example ways of calculating the same Sørensen dissimilarity -- gives the same answer.
+#1 means that the communities are totally different. 
+data(BCI)
+d0 <- vegdist(BCI, "bray", binary = TRUE)  # binary: (A+B-2*J)/(A+B)
+d2 <- designdist(BCI, "(b+c)/(2*a+b+c)", abcd = TRUE)
+
+
+#------ Step 5: standardize and transform predictor values from LAGOS -------
+
