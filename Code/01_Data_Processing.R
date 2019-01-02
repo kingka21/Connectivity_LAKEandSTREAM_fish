@@ -139,6 +139,8 @@ depth <- data.frame(lagoslakeid=lg$lakes_limno$lagoslakeid,
 lake_morphometry <- data.frame(lagoslakeid=lg$locus$lagoslakeid,
                                HU4_ZoneID=lg$locus$hu4_zoneid,
                                HU6_ZoneID=lg$locus$hu6_zoneid,
+                               HU8_ZoneID=lg$locus$hu8_zoneid,
+                               HU12_ZoneID=lg$locus$hu12_zoneid,
                                nhd_lat=lg$locus$nhd_lat,
                                nhd_long=lg$locus$nhd_long,
                                lakearea_ha=lg$locus$lake_area_ha,
@@ -206,6 +208,7 @@ HU4_conn <- data.frame(HU4_ZoneID=HU4_conn$hu4_zoneid,
                        hu4_lakes_area_ha=HU4_conn$hu4_lakes_overlapping_area_ha,
                        hu4_wetlands_area_ha=HU4_conn$hu4_wl_allwetlandsdissolved_overlapping_area_ha)
 
+
 #merge all local predictors
 local_preds <- left_join(lake_morphometry, depth, by = "lagoslakeid") %>%
   left_join(IWS_LULC, by = "lagoslakeid") %>%
@@ -245,7 +248,7 @@ write.csv(MI.fish.LAGOS, "Data/MI_lake_data.csv", row.names = FALSE)
 
 #fish.data<-read.csv('Data/MI_lake_data.csv')
 
-#------ Step 4: calculate beta diversity for HUC4s and HUC6s 
+#------ Step 4: calculate beta diversity for HUC4s
 library(vegan)
 #filter to just columns we need
 MIdata1<-dplyr::select(MIdata, LAKE_CODE, SPP_CODE, Total_Number_Caught) 
@@ -259,12 +262,9 @@ MIdata4<-dplyr::left_join(MIdata3, HUC_codes)
 MIdata4[is.na(MIdata4)] <- 0 #NAs to 0 
 MIdata4<-MIdata4[!(is.na(MIdata4$HU6_ZoneID)),] #get rid of 5 lakes that didn't match to LAGOS
 
-# how have others calc beta div - selected regions? 
-#8 total HUC4s and 10 total HUC 6 
-
 ### create a function to calculate beta diversity average for a region
  calcbeta<-function(x) { # x = a dataframe   
-   new<- subset(x, select = -c(LAKE_CODE, lagoslakeid, HU4_ZoneID, HU6_ZoneID))
+   new<- subset(x, select = -c(LAKE_CODE, lagoslakeid, HU4_ZoneID, HU12_ZoneID))
    #dissimilarity
    dis<-vegdist(new, "bray", binary = TRUE) 
    #average dissimilarity
@@ -272,10 +272,9 @@ MIdata4<-MIdata4[!(is.na(MIdata4$HU6_ZoneID)),] #get rid of 5 lakes that didn't 
    return(avg)
  }
  
-# loop to run dissimilarity on all HUCs 
-HUC_string <-unique(MIdata4$HU4_ZoneID)
-HUC_string<-list("HU4_31", "HU4_30", "HU4_40", "HU4_37", "HU4_32", "HU4_24", "HU4_41", "HU4_39")
- 
+# loop to run dissimilarity on all HUC 4s
+HUC_string <-as.character(unique(MIdata4$HU4_ZoneID))
+
 output_df <- data.frame(HU4_ZoneID=NA, beta=NA)            
 for (i in 1:8) {
   sub<-subset(MIdata4, HU4_ZoneID == HUC_string[i] )
@@ -283,8 +282,21 @@ for (i in 1:8) {
   output_df[i,1]=HUC_string[i]
   output_df[i,2]=beta
 } 
- 
-MI.fish_beta <-left_join(MI.fish.LAGOS, output_df, by = 'HU4_ZoneID')
+
+### loop to run on all HUC12s 
+HUC_string <-as.character(unique(MIdata4$HU12_ZoneID))
+
+output_df <- data.frame(HU6_ZoneID=NA, beta=NA)            
+for (i in 1:10) {
+  sub<-subset(MIdata4, HU6_ZoneID == HUC_string[i] )
+  beta<-calcbeta(sub)
+  output_df[i,1]=HUC_string[i]
+  output_df[i,2]=beta
+} 
+
+
+#join the beta outputs 
+MI.fish_beta <-left_join(MI.fish.LAGOS, output_df, by = 'HU6_ZoneID')
 
 ## compare alpha and beta diversity (Pool et al 2014)
 ggplot(data = MI.fish_beta, (aes(x = richness, y = beta ))) + geom_point() +
@@ -301,13 +313,20 @@ p<-ggplot(data = MImap) +
   geom_polygon(aes(x = long, y = lat, group = group), fill = "white", color = "black") + #this fill MI white and outline is black
   coord_fixed(1.3) 
 
-#map of beta diversity 
+#map of beta diversity at the HUC4 scale 
 p + 
-  geom_point(data=MI.fish_beta, aes(x=nhd_long, y=nhd_lat, colour = c(beta))) + scale_colour_gradient(low = "yellow", high = "darkblue") 
+  geom_point(data=MI.fish_beta, aes(x=nhd_long, y=nhd_lat, colour = c(beta))) + scale_colour_gradient(low = "yellow", high = "darkblue") + 
+   labs(color="beta diversity")
+
+#map of beta diversity at the HUC6 scale 
+p + 
+  geom_point(data=MI.fish_beta, aes(x=nhd_long, y=nhd_lat, colour = c(beta))) + scale_colour_gradient(low = "yellow", high = "darkblue") + 
+  labs(color="beta diversity")
 
 #map of alpha diversity 
 p + 
-  geom_point(data=MI.fish_beta, aes(x=nhd_long, y=nhd_lat, colour = c(richness))) + scale_colour_gradient(low = "yellow", high = "darkblue") 
+  geom_point(data=MI.fish_beta, aes(x=nhd_long, y=nhd_lat, colour = c(richness))) + scale_colour_gradient(low = "yellow", high = "darkblue") +
+  labs(color="alpha diversity")
 
 ####### HUC4s ######################
 #bring in HU4 polygons for visual 
