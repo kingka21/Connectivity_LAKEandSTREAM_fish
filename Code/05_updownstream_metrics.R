@@ -34,7 +34,7 @@ sum(upstream_streams$lengthkm)
 #return lake area (sqkm) 
 sum(upstream_lakes$areasqkm) 
 
-#traverse downstream # this is the terminal reach for Duck Lake is 123335642
+#traverse downstream # the terminal reach for Duck Lake is 123335642
 network = traverse_flowlines(Inf, sf_duck$permanent_, direction = 'out')
 ### CROP OUT GREAT LAKES 
 connected_streams = get_shape_by_id(network$permanent_, dataset = 'nhdh', feature_type = 'flowline')
@@ -149,7 +149,18 @@ nhd_plus_list(vpu = 4, "NHDPlusAttributes")
 nhd_plus_list(vpu = 4, "NHDPlusCatchment")
 
 #network query lat long is the focal lake, leave everything else as 
-#### 
+#### Duck  Lake coords 46.20520 , -89.21884, however this code does not find the outlet
+coords  <- data.frame(lat = 46.20520, lon = -89.21884)
+#qry <- nhd_plus_query(coords$lon, coords$lat,
+                  #    dsn = c("NHDWaterbody"), buffer_dist = 0.05)
+
+
+t_reach <- terminal_reaches(coords$lon, coords$lat, buffer_dist = 0.01)
+
+mapview(st_as_sf(coords, coords = c("lon", "lat"), crs = 4326)) +
+  mapview(t_reach$geometry, color = "red")
+
+#test that works with lake from Joe's example code 
 coords  <- data.frame(lat = 41.42217, lon = -73.24189)
 t_reach <- terminal_reaches(coords$lon, coords$lat)
 
@@ -180,6 +191,18 @@ library(nhdplusTools)
 library(sf)
 library(ggplot2)
 library(ggspatial)
+
+### example code for NHDplusTools that works 
+comid            <- 12228511
+nldi_comid <- list(featureSource = "comid",
+                   featureID = comid)
+
+dd <- navigate_nldi(nldi_feature = nldi_comid,
+                    mode = "downstreamMain",
+                    data_source = "")
+mapview(dd)
+ggplot() +
+  geom_sf(data = st_geometry(dd)) 
 
 #### USE NHDPLUS V2 medium res
 #downstream and upstream lake areas #Note: Match_ID is perm ID from highres, lost some lakes 
