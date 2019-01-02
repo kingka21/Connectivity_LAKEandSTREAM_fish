@@ -55,6 +55,7 @@ median(MI_lake_data$lakearea_ha)
 
 
 dev.off()
+
 #### histogram of frequency of richness 
 hist(MI_lake_data$richness, xlim=c(0,30), ylim=c(0,50), 
      breaks=c(6), col="lightblue",
