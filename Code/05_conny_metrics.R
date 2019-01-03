@@ -1,9 +1,16 @@
 #load libraries 
+install.packages("hydrolinks")
 library(dplyr)
 library(hydrolinks)
 library(sf)
 library(mapview)
 library(LAGOSNE)
+
+#set a path for data from hydrolinks package 
+cache_set_dir(path = 'Data/')
+
+#read in data 
+only.MI.fish<-read.csv("Data/MI_lake_data.csv")
 
 ####### Get downstream and upstream lake areas ###### 
 
@@ -14,11 +21,19 @@ library(LAGOSNE)
 lake_poly = get_shape_by_id(only.MI.fish$permanent_, dataset = 'nhdh', feature_type = 'waterbody')
 
 ## loop to traverse upstream metrics for all lakes 
-## for all the lakes 
-output <- data.frame(permanent_=NA, up_lakes_area=NA, up_streams_length=NA)  
+## for all the lakes lake_poly[i]
+  #test with two lakes 
+  #test<-filter(lake_poly, permanent_ == 123397648 | permanent_ ==     123396104 )
+  #test<-as.data.frame(test)
+lake_poly<-as.data.frame(lake_poly)
+
+output <- data.frame(permanent_=NA, up_lakes_area=NA, up_streams_length=NA, down_lakes_area=NA, down_streams_length=NA)    
+
 for (i in 1:length(lake_poly)) {
-  # traverse upstream
-  upstream = traverse_flowlines(Inf, lake_poly[i]$permanent_, direction = 'in')
+  perm<-lake_poly[i,1]
+  
+   # traverse upstream
+  upstream = traverse_flowlines(Inf, perm, direction = 'in')
   upstream_streams = get_shape_by_id(upstream$permanent_, dataset = 'nhdh', feature_type = 'flowline')
   upstream_lakes = get_shape_by_id(upstream$permanent_, dataset='nhdh', feature_type = 'waterbody')
   up_lakes_sum <- if(is.na(upstream_lakes)) {0}   
@@ -28,15 +43,40 @@ for (i in 1:length(lake_poly)) {
   else{ sum(upstream_streams$lengthkm) #return upstream lake area (sqkm) 
   }
   
-  output[i,1]=lake_poly[i]$permanent_
+  #traverse downstream 
+  network = traverse_flowlines(Inf, perm, direction = 'out')
+  ### CROP OUT GREAT LAKES 
+  connected_streams = get_shape_by_id(network$permanent_, dataset = 'nhdh', feature_type = 'flowline')
+  connected_lakes = get_shape_by_id(network$permanent_, dataset='nhdh', feature_type = 'waterbody')
+  GL_streams<-dplyr::filter(connected_streams, fcode == 56600 ) #coastline fcode
+  GL_lakes<-dplyr::filter(connected_lakes, fcode==39004 | fcode==39010) #Lake Superior fcodes
+  new_network<-dplyr::anti_join(network, GL_streams, by="permanent_") %>%
+    dplyr::anti_join(GL_lakes, by="permanent_")
+  network2<-dplyr::filter(new_network, !grepl("{", permanent_, fixed = TRUE)) #get rid of other polylines in GL
+  network2$LENGTHnum<-as.numeric(network2$LENGTHKM) #need numeric to find max distance from focal lake 
+  
+  #traverse back upstream from the terminal reach. This will get all of the water bodies  
+  return_network = traverse_flowlines(Inf, network2[which.max(network2$LENGTHnum),1], direction='in',  max_steps = 100000)
+  connected_streams = get_shape_by_id(return_network$permanent_, dataset = 'nhdh', feature_type = 'flowline')
+  connected_lakes = get_shape_by_id(return_network$permanent_, dataset='nhdh', feature_type = 'waterbody')
+  
+  down_lakes_sum <- sum(connected_lakes$areasqkm) - up_lakes_sum - lake_poly[i,6] #return downstream lake area (sqkm)= all lakes - upstream lakes - the focal lake area
+  
+  down_streams_sum <- sum(connected_streams$lengthkm) - up_streams_sum #return downstream stream length
+  
+  
+  output[i,1]=perm
   output[i,2]=up_lakes_sum
   output[i,3]=up_streams_sum
+  output[i,4]=down_lakes_sum
+  output[i,5]=down_streams_sum
 } 
 
 ## test one lake Duck Lake connected to Lake Superior 
 test<-filter(lake_poly, permanent_ == 123397648)
 
 output <- data.frame(permanent_=NA, up_lakes_area=NA, up_streams_length=NA, down_lakes_area=NA, down_streams_length=NA)            
+
 for (permanent_ in test) {
   # traverse upstream
   upstream = traverse_flowlines(Inf, test$permanent_, direction = 'in')
