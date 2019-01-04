@@ -21,7 +21,8 @@ lg_points <- data.frame(lagoslakeid=lg$locus$lagoslakeid,
                                nhd_lat=lg$locus$nhd_lat,
                                nhd_long=lg$locus$nhd_long)
 lg_points$lagoslakei<-as.factor(lg_points$lagoslakeid)
-allMI_lakes<-dplyr::left_join(sf_MIonly, lg_points, by="lagoslakei")
+allMI_lakes<-dplyr::left_join(sf_MIonly, lg_points, by="lagoslakei") #6,511 lakes in MI
+isolated<-dplyr::filter(allMI_lakes, LakeConnec == 'Isolated') # 2,645 isolated 
 
 ### mapping 
 library(ggmap)
