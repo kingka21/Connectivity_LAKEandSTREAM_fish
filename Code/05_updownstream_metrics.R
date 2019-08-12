@@ -63,13 +63,51 @@ mapview(connected_streams) + mapview(connected_lakes)
 
 
 ## loop 
-output_huc4 <- data.frame(HU4_ZoneID=NA, beta_hu4=NA)            
-for (i in 1:8) {
-  sub<-subset(MIdata4, HU4_ZoneID == HUC_string[i] )
-  beta<-calcbeta(sub)
-  output_huc4[i,1]=HUC_string[i]
-  output_huc4[i,2]=beta
+output <- data.frame(permanent_=NA, up_lakes_area=NA, up_streams_length=NA, down_lakes_area=NA, down_streams_length=NA)    
+
+for (i in 1:length(lake_poly)) {
+  perm<-lake_poly[i,1]
+  
+  # traverse upstream
+  upstream = traverse_flowlines(Inf, perm, direction = 'in')
+  upstream_streams = get_shape_by_id(upstream$permanent_, dataset = 'nhdh', feature_type = 'flowline')
+  upstream_lakes = get_shape_by_id(upstream$permanent_, dataset='nhdh', feature_type = 'waterbody')
+  up_lakes_sum <- if(is.na(upstream_lakes)) {0}   
+  else{ sum(upstream_lakes$areasqkm) #return upstream lake area (sqkm) 
+  }
+  up_streams_sum <-if(is.na(upstream_streams)) {0}  
+  else{ sum(upstream_streams$lengthkm) #return upstream lake area (sqkm) 
+  }
+  
+  #traverse downstream 
+  network = traverse_flowlines(Inf, perm, direction = 'out')
+  ### CROP OUT GREAT LAKES 
+  connected_streams = get_shape_by_id(network$permanent_, dataset = 'nhdh', feature_type = 'flowline')
+  connected_lakes = get_shape_by_id(network$permanent_, dataset='nhdh', feature_type = 'waterbody')
+  GL_streams<-dplyr::filter(connected_streams, fcode == 56600 ) #coastline fcode
+  GL_lakes<-dplyr::filter(connected_lakes, fcode==39004 | fcode==39010) #Lake Superior fcodes
+  new_network<-dplyr::anti_join(network, GL_streams, by="permanent_") %>%
+    dplyr::anti_join(GL_lakes, by="permanent_")
+  network2<-dplyr::filter(new_network, !grepl("{", permanent_, fixed = TRUE)) #get rid of other polylines in GL
+  network2$LENGTHnum<-as.numeric(network2$LENGTHKM) #need numeric to find max distance from focal lake 
+  
+  #traverse back upstream from the terminal reach. This will get all of the water bodies  
+  return_network = traverse_flowlines(Inf, network2[which.max(network2$LENGTHnum),1], direction='in',  max_steps = 100000)
+  connected_streams = get_shape_by_id(return_network$permanent_, dataset = 'nhdh', feature_type = 'flowline')
+  connected_lakes = get_shape_by_id(return_network$permanent_, dataset='nhdh', feature_type = 'waterbody')
+  
+  down_lakes_sum <- sum(connected_lakes$areasqkm) - up_lakes_sum - lake_poly[i,6] #return downstream lake area (sqkm)= all lakes - upstream lakes - the focal lake area
+  
+  down_streams_sum <- sum(connected_streams$lengthkm) - up_streams_sum #return downstream stream length
+  
+  
+  output[i,1]=perm
+  output[i,2]=up_lakes_sum
+  output[i,3]=up_streams_sum
+  output[i,4]=down_lakes_sum
+  output[i,5]=down_streams_sum
 } 
+
 ######################## other tests ########################
 #PLOTTING 
 #traverse upstream of the lake #upstream traversal; plot all inflows
@@ -179,6 +217,59 @@ mapview(st_as_sf(coords, coords = c("lon", "lat"), crs = 4326)) +
 ### RIVER DISTANCE PACKAGE MAY BE USEFUL 
 #install.packages("riverdist")
 #library(riverdist)
+
+##### Joe's code from streamnet package for closest lake metrics (could not download package)###
+## function to use with igraph, findd this in Joe's code - sf2igraph 
+devtools::install_github("jsta/streamnet")
+closest_lake_distance()
+closest_lake_distance <- function(lines, lakes, outlet, size_threshold = 4,
+                                  map = FALSE){
+  
+  res <- get_focal_distance(lines, lakes, outlet, size_threshold)
+  
+  if(!all(is.na(res))){
+    if(map){
+      plot(st_sf(data.frame(dist = res$dist),
+                 st_sfc(st_geometry(res$t_reach_pnts))))
+    }
+    
+    list(
+      closest_lake_distance = min(res$dist),
+      num_up_lakes          = length(res$t_reach_pnts),
+      lake_area             = res$lake_area)
+  }else{
+    list(
+      closest_lake_distance = NA,
+      num_up_lakes          = NA,
+      lake_area             = NA)
+  }
+}
+
+
+
+wb_coords <- c(44.00467, -88.43445)
+res <- hlk_traverse(wb_coords)
+hlk_traverse <- function(wb_coords, dset = "nhdh"){
+  wb_id <- link_to_waterbodies(wb_coords[1], wb_coords[2],
+                               1, dataset = 'nhdh')
+  wb_id <- purrr::when(wb_id, any(names(.) %in% "COMID")
+                       ~ .$COMID,
+                       ~.$PERMANENT_)
+  
+  nhd_wb <- get_shape_by_id(wb_id, feature_type = "waterbody", dataset = dset)
+  
+  f_lines <- traverse_flowlines(max_distance = Inf, direction = "in",
+                                start = wb_id,
+                                dataset = dset, md5check = FALSE)
+  f_lines <- purrr::when(f_lines, any(names(.) %in% "COMID")
+                         ~ .$COMID,
+                         ~.$PERMANENT_)
+  
+  upstream_shp <- get_shape_by_id(f_lines, dataset = dset,
+                                  feature_type = "flowline")
+  
+  list(nhd_wb = nhd_wb, upstream_shp = upstream_shp)
+}
 
 #################################################
 ### NHDplusTools vs Joe's package nhdR
