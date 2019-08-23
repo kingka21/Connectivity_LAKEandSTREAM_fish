@@ -35,9 +35,25 @@ MI_d<-filter(MI_fish, !(SPP_CODE == "unknown_bullhead" & LAKE_CODE == "24_71")) 
   filter( !(SPP_CODE == "unknown_bullhead" & LAKE_CODE == "31_585")) %>%
   filter( !(SPP_CODE == "unknown_bullhead" & LAKE_CODE == "4_4"))
 
-summary(MI_d$GEAR)
-MIsp<-MI_d[!duplicated(paste(MI_d$SPP_CODE)),] # 84 unique species
-MIlakes<-MI_d[!duplicated(paste(MI_d$LAKE_CODE)),] # 98 unique lakes
+#clean up species names across states 
+MI_d$SPP_CODE_CAP<-casefold(MI_d$SPP_CODE, upper = TRUE) #make them all cap
+MI_d$SPP_CODE_n<-gsub(" ", "_", MI_d$SPP_CODE_CAP, fixed=TRUE) #add a dash where there is a space
+
+#check to make sure sp are unique 
+MI_d$SPP_CODE_new<- ifelse(MI_d$SPP_CODE_n == 'BULLHEADS', 'BULLHEAD_SP.', MI_d$SPP_CODE_n) 
+MI_d$SPP_CODE_new<- ifelse(MI_d$SPP_CODE_n == 'BULLHEAD_CATFISHES_UNSP.', 'BULLHEAD_SP.', MI_d$SPP_CODE_new) 
+MI_d$SPP_CODE_new<- ifelse(MI_d$SPP_CODE_n == 'CISCO_OR_LAKE_HERRING', 'CISCO', MI_d$SPP_CODE_new) 
+MI_d$SPP_CODE_new<- ifelse(MI_d$SPP_CODE_n == 'NORTHERN_HOGSUCKER', 'NORTHERN_HOG_SUCKER', MI_d$SPP_CODE_new) 
+MI_d$SPP_CODE_new<- ifelse(MI_d$SPP_CODE_n == 'QUILLBACK_CARPSUCKER', 'QUILLBACK', MI_d$SPP_CODE_new) 
+MI_d$SPP_CODE_new<- ifelse(MI_d$SPP_CODE_n == 'ROCKBASS', 'ROCK_BASS', MI_d$SPP_CODE_new) 
+MI_d$SPP_CODE_new<- ifelse(MI_d$SPP_CODE_n == 'TROUTPERCH', 'TROUT_PERCH', MI_d$SPP_CODE_new) 
+MI_d$SPP_CODE_new<- ifelse(MI_d$SPP_CODE_n == 'UNKNOWN_BULLHEAD', 'BULLHEAD_SP.', MI_d$SPP_CODE_new) 
+MI_d$SPP_CODE_new<- ifelse(MI_d$SPP_CODE_n == 'UNKNOWN_KILLIFISH', 'KILLIFISH_SP.', MI_d$SPP_CODE_new) 
+MI_d$SPP_CODE_new<- ifelse(MI_d$SPP_CODE_n == 'UNKNOWN_REDHORSE', 'REDHORSES', MI_d$SPP_CODE_new) 
+MI_d$SPP_CODE_new<- ifelse(MI_d$SPP_CODE_n == 'UNKNOWN_SCULPIN', 'SCULPINS', MI_d$SPP_CODE_new) 
+MI_d$SPP_CODE_new<- ifelse(MI_d$SPP_CODE_n == 'AMERICAN_BROOK_LAMPREY_(AMMOCOETE)', 'AMERICAN_BROOK_LAMPREY', MI_d$SPP_CODE_new) 
+
+MIsp<-MI_d[!duplicated(paste(MI_d$SPP_CODE_new)),] # 84 unique species 
 
 ### ### ### ### ### ### ### ### 
 ### clean up WI data set ###
@@ -77,8 +93,26 @@ WI_d<-filter(WI_fish, !(SPP_CODE == "BULLHEAD_CATFISHES_UNSP." & LAKE_CODE == "2
   filter( ! (SPP_CODE == "MINNOWS_&_CARPS_UNSP." & LAKE_CODE == "739100" ))%>%
   filter( ! (SPP_CODE == "MINNOWS_&_CARPS_UNSP." & LAKE_CODE == "858300" ))
 
+#clean up species names across states 
+WI_d$SPP_CODE_CAP<-casefold(WI_d$SPP_CODE, upper = TRUE) #make them all cap
+WI_d$SPP_CODE_n<-gsub(" ", "_", WI_d$SPP_CODE_CAP, fixed=TRUE) #add a dash where there is a space
+
+#check to make sure sp are unique 
+WI_d$SPP_CODE_new<- ifelse(WI_d$SPP_CODE_n == 'BULLHEADS', 'BULLHEAD_SP.', WI_d$SPP_CODE_n) 
+WI_d$SPP_CODE_new<- ifelse(WI_d$SPP_CODE_n == 'BULLHEAD_CATFISHES_UNSP.', 'BULLHEAD_SP.', WI_d$SPP_CODE_new) 
+WI_d$SPP_CODE_new<- ifelse(WI_d$SPP_CODE_n == 'CISCO_OR_LAKE_HERRING', 'CISCO', WI_d$SPP_CODE_new) 
+WI_d$SPP_CODE_new<- ifelse(WI_d$SPP_CODE_n == 'NORTHERN_HOGSUCKER', 'NORTHERN_HOG_SUCKER', WI_d$SPP_CODE_new) 
+WI_d$SPP_CODE_new<- ifelse(WI_d$SPP_CODE_n == 'QUILLBACK_CARPSUCKER', 'QUILLBACK', WI_d$SPP_CODE_new) 
+WI_d$SPP_CODE_new<- ifelse(WI_d$SPP_CODE_n == 'ROCKBASS', 'ROCK_BASS', WI_d$SPP_CODE_new) 
+WI_d$SPP_CODE_new<- ifelse(WI_d$SPP_CODE_n == 'TROUTPERCH', 'TROUT_PERCH', WI_d$SPP_CODE_new) 
+WI_d$SPP_CODE_new<- ifelse(WI_d$SPP_CODE_n == 'UNKNOWN_BULLHEAD', 'BULLHEAD_SP.', WI_d$SPP_CODE_new) 
+WI_d$SPP_CODE_new<- ifelse(WI_d$SPP_CODE_n == 'UNKNOWN_KILLIFISH', 'KILLIFISH_SP.', WI_d$SPP_CODE_new) 
+WI_d$SPP_CODE_new<- ifelse(WI_d$SPP_CODE_n == 'UNKNOWN_REDHORSE', 'REDHORSES', WI_d$SPP_CODE_new) 
+WI_d$SPP_CODE_new<- ifelse(WI_d$SPP_CODE_n == 'UNKNOWN_SCULPIN', 'SCULPINS', WI_d$SPP_CODE_new) 
+WI_d$SPP_CODE_new<- ifelse(WI_d$SPP_CODE_n == 'AMERICAN_BROOK_LAMPREY_(AMMOCOETE)', 'AMERICAN_BROOK_LAMPREY', WI_d$SPP_CODE_new) 
+
 summary(WI_d$GEAR)
-WIsp<-WI_d[!duplicated(paste(WI_d$SPP_CODE)),] # 107 unique species 
+WIsp<-WI_d[!duplicated(paste(WI_d$SPP_CODE_new)),] # 106 unique species 
 
 ### ### ### ### ### ### ### ### ### 
 ### clean up Iowa data set ### 
@@ -88,6 +122,25 @@ IAlakes<-IAdata[!duplicated(paste(IAdata$LAKE_CODE)),] # 127 unique lakes
 IA_d<-filter(IAdata, !(FISH_NAME == "Buffalo_Mixed_Species" | FISH_NAME == "Bullhead_Mixed_Species" |FISH_NAME == "Crappie_Mixed_Species" |
                             FISH_NAME == "Minnows_Mixed_Sps_&_families" | FISH_NAME == "Sauger_X_Walleye" | FISH_NAME == "Sucker,_Redhorse_Mixed" 
                           | FISH_NAME == "Sunfish_Mixed_Species" | FISH_NAME == "White_bass_X_Striped_Bass"))
+
+#clean up species names across states 
+IA_d$SPP_CODE_CAP<-casefold(IA_d$FISH_NAME, upper = TRUE) #make them all cap
+IA_d$SPP_CODE_n<-gsub(" ", "_", IA_d$SPP_CODE_CAP, fixed=TRUE) #add a dash where there is a space
+
+#check to make sure sp are unique 
+IA_d$SPP_CODE_new<- ifelse(IA_d$SPP_CODE_n == 'BULLHEADS', 'BULLHEAD_SP.', IA_d$SPP_CODE_n) 
+IA_d$SPP_CODE_new<- ifelse(IA_d$SPP_CODE_n == 'BULLHEAD_CATFISHES_UNSP.', 'BULLHEAD_SP.', IA_d$SPP_CODE_new) 
+IA_d$SPP_CODE_new<- ifelse(IA_d$SPP_CODE_n == 'CISCO_OR_LAKE_HERRING', 'CISCO', IA_d$SPP_CODE_new) 
+IA_d$SPP_CODE_new<- ifelse(IA_d$SPP_CODE_n == 'NORTHERN_HOGSUCKER', 'NORTHERN_HOG_SUCKER', IA_d$SPP_CODE_new) 
+IA_d$SPP_CODE_new<- ifelse(IA_d$SPP_CODE_n == 'QUILLBACK_CARPSUCKER', 'QUILLBACK', IA_d$SPP_CODE_new) 
+IA_d$SPP_CODE_new<- ifelse(IA_d$SPP_CODE_n == 'ROCKBASS', 'ROCK_BASS', IA_d$SPP_CODE_new) 
+IA_d$SPP_CODE_new<- ifelse(IA_d$SPP_CODE_n == 'TROUTPERCH', 'TROUT_PERCH', IA_d$SPP_CODE_new) 
+IA_d$SPP_CODE_new<- ifelse(IA_d$SPP_CODE_n == 'UNKNOWN_BULLHEAD', 'BULLHEAD_SP.', IA_d$SPP_CODE_new) 
+IA_d$SPP_CODE_new<- ifelse(IA_d$SPP_CODE_n == 'UNKNOWN_KILLIFISH', 'KILLIFISH_SP.', IA_d$SPP_CODE_new) 
+IA_d$SPP_CODE_new<- ifelse(IA_d$SPP_CODE_n == 'UNKNOWN_REDHORSE', 'REDHORSES', IA_d$SPP_CODE_new) 
+IA_d$SPP_CODE_new<- ifelse(IA_d$SPP_CODE_n == 'UNKNOWN_SCULPIN', 'SCULPINS', IA_d$SPP_CODE_new) 
+IA_d$SPP_CODE_new<- ifelse(IA_d$SPP_CODE_n == 'AMERICAN_BROOK_LAMPREY_(AMMOCOETE)', 'AMERICAN_BROOK_LAMPREY', IA_d$SPP_CODE_new)
+
 summary(IA_d$GEAR)
 IAsp<-IA_d[!duplicated(paste(IA_d$FISH_NAME)),] # 38 unique species
 
@@ -114,7 +167,26 @@ NHME_d$YOY<-as.numeric(as.character(NHME_d$NUM_Y_O_Y))
 NHME_d[is.na(NHME_d)] <- 0 
 NHME_d$TOTAL_COUNT<- NHME_d$ADULT + NHME_d$JUV + NHME_d$YOY
 
-NHMEsp<-NHME_d[!duplicated(paste(NHME_d$NAME_COM)),] # 51 unique species 
+#clean up species names across states 
+NHME_d$SPP_CODE_CAP<-casefold(NHME_d$NAME_COM, upper = TRUE) #make them all cap
+NHME_d$SPP_CODE_n<-gsub(" ", "_", NHME_d$SPP_CODE_CAP, fixed=TRUE) #add a dash where there is a space
+
+#check to make sure sp are unique 
+NHME_d$SPP_CODE_new<- ifelse(NHME_d$SPP_CODE_n == 'BULLHEADS', 'BULLHEAD_SP.', NHME_d$SPP_CODE_n) 
+NHME_d$SPP_CODE_new<- ifelse(NHME_d$SPP_CODE_n == 'BULLHEAD_CATFISHES_UNSP.', 'BULLHEAD_SP.', NHME_d$SPP_CODE_new) 
+NHME_d$SPP_CODE_new<- ifelse(NHME_d$SPP_CODE_n == 'CISCO_OR_LAKE_HERRING', 'CISCO', NHME_d$SPP_CODE_new) 
+NHME_d$SPP_CODE_new<- ifelse(NHME_d$SPP_CODE_n == 'NORTHERN_HOGSUCKER', 'NORTHERN_HOG_SUCKER', NHME_d$SPP_CODE_new) 
+NHME_d$SPP_CODE_new<- ifelse(NHME_d$SPP_CODE_n == 'QUILLBACK_CARPSUCKER', 'QUILLBACK', NHME_d$SPP_CODE_new) 
+NHME_d$SPP_CODE_new<- ifelse(NHME_d$SPP_CODE_n == 'ROCKBASS', 'ROCK_BASS', NHME_d$SPP_CODE_new) 
+NHME_d$SPP_CODE_new<- ifelse(NHME_d$SPP_CODE_n == 'TROUTPERCH', 'TROUT_PERCH', NHME_d$SPP_CODE_new) 
+NHME_d$SPP_CODE_new<- ifelse(NHME_d$SPP_CODE_n == 'UNKNOWN_BULLHEAD', 'BULLHEAD_SP.', NHME_d$SPP_CODE_new) 
+NHME_d$SPP_CODE_new<- ifelse(NHME_d$SPP_CODE_n == 'UNKNOWN_KILLIFISH', 'KILLIFISH_SP.', NHME_d$SPP_CODE_new) 
+NHME_d$SPP_CODE_new<- ifelse(NHME_d$SPP_CODE_n == 'UNKNOWN_REDHORSE', 'REDHORSES', NHME_d$SPP_CODE_new) 
+NHME_d$SPP_CODE_new<- ifelse(NHME_d$SPP_CODE_n == 'UNKNOWN_SCULPIN', 'SCULPINS', NHME_d$SPP_CODE_new) 
+NHME_d$SPP_CODE_new<- ifelse(NHME_d$SPP_CODE_n == 'AMERICAN_BROOK_LAMPREY_(AMMOCOETE)', 'AMERICAN_BROOK_LAMPREY', NHME_d$SPP_CODE_new)
+
+
+NHMEsp<-NHME_d[!duplicated(paste(NHME_d$SPP_CODE_new)),] # 49 unique species 
 
 #filter out NH and Maine for summary stats
 NH_d<-filter(NHME_d, grepl("NH", LAKE_ID, fixed = TRUE))
@@ -143,17 +215,19 @@ MI_d$GEAR2<-sapply(MI_d$GEAR, function(x) {
             else {
               if(x== 'TRAPNET') {'FYKE'}
             }}}}}}})
-#filter to just columns we need
-MIdata1<-dplyr::select(MI_d, LAKE_CODE, GEAR2, SPP_CODE, Total_Number_Caught) 
+
+#filter just columns we need and filter out unwanted Gear types 
+MI_d<-filter(MI_d, GEAR2 == "SHOCK" | GEAR2 == "FYKE" )
+MIdata1<-dplyr::select(MI_d, LAKE_CODE, GEAR2, SPP_CODE_new, Total_Number_Caught) 
 
 #group by lake and gear and species to add up all the species for a gear 
-MI4 <-MIdata1 %>% group_by(LAKE_CODE, GEAR2, SPP_CODE) %>% summarise(total=sum(Total_Number_Caught))
+MI4 <-MIdata1 %>% group_by(LAKE_CODE, GEAR2, SPP_CODE_new) %>% summarise(total=sum(Total_Number_Caught))
 
 #make a new column called lake that is a combination of the lake code and gear type 
 MI4$lake<-paste(MI4$LAKE_CODE, MI4$GEAR2, sep="-")  
 
 #rearrange table to have species along the top for vegan package
-MInewformat<-tidyr::spread(MI4, SPP_CODE, total) # aggregate by lake name and gear and adds up all sp. 
+MInewformat<-tidyr::spread(MI4, SPP_CODE_new, total) # aggregate by lake name and gear and adds up all sp. 
 MInewformat[is.na(MInewformat)] <- 0 #NAs to 0 
 
 MInewformat<-subset(MInewformat, select = -c(LAKE_CODE,GEAR2) )   #get rid of columns I do not want
@@ -184,18 +258,17 @@ output_MI<- cbind(df, output_df)
 
 MIdata2<-left_join(MI_d, output_MI, by = c("LAKE_CODE", "GEAR2"="GEAR"))
 
-MIdata_lessgears<-filter(MIdata2, obs_spec > 1) #remove lake-gears with only one species 
-no_plat<-filter(output_MI, slope > 0.05 & obs_spec > 1) #results that do not meet the criteria 
-insuf_samples<-no_plat[!duplicated(paste(no_plat$LAKE_CODE)),] # how many lakes do we lose? 35
-bad_lakes<-dplyr::select(insuf_samples, LAKE_CODE) ##35 lakes
+no_plat<-filter(output_MI, slope > 0.05 | obs_spec == 1) #results that do not meet the criteria 
+insuf_samples<-no_plat[!duplicated(paste(no_plat$LAKE_CODE)),] # how many lakes do we lose? 7
+bad_lakes<-dplyr::select(insuf_samples, LAKE_CODE) ##7 lakes
 # select the observations from the original dataset minus waterbodies that do not plateau 
 #anti_join returns all rows from data that do not match bad_lakes)
-MI_d2<-anti_join(MIdata_lessgears, bad_lakes)
+MI_d2<-anti_join(MIdata2, bad_lakes)
 
 #use iNEXT to estimate expected number of species and shannon diversity for every lake/reservoir
 #filter to just columns we need
-MIdata_iNEXT<-dplyr::select(MI_d2, LAKE_CODE, SPP_CODE, Total_Number_Caught) %>% 
-  group_by(LAKE_CODE, SPP_CODE) %>% summarise(total=sum(Total_Number_Caught)) #group by lake and sp to add up all the sp for a lake 
+MIdata_iNEXT<-dplyr::select(MI_d2, LAKE_CODE, SPP_CODE_new, Total_Number_Caught) %>% 
+  group_by(LAKE_CODE, SPP_CODE_new) %>% summarise(total=sum(Total_Number_Caught)) #group by lake and sp to add up all the sp for a lake 
 
 #change the data format so that all of the lakes are columns and species are rows. This is the iNEXT format needed.
 newform<-tidyr::spread(MIdata_iNEXT, LAKE_CODE, total) #62 lakes left and 78 species
@@ -207,10 +280,10 @@ newform[is.na(newform)] <- 0
 newform<-as.data.frame(newform)
 
 #remove species codes 
-new<-subset(newform, select = -c(SPP_CODE))  #dataset format to use for iNEXT code 
+new<-subset(newform, select = -c(SPP_CODE_new))  #dataset format to use for iNEXT code 
 
 #run rafaction loop from iNEXT code 
-lake_names<-MIdata_iNEXT[!duplicated(paste(MIdata_iNEXT$LAKE_CODE)),] # 62 unique lakes
+lake_names<-MIdata_iNEXT[!duplicated(paste(MIdata_iNEXT$LAKE_CODE)),] # 91 unique lakes
 MI_diversity_output <-data.frame(matrix(NA, nrow = length(lake_names$LAKE_CODE), ncol = 3))
 MI_diversity_output[,1] = lake_names$LAKE_CODE #put all the lake names in the first column
 colnames(MI_diversity_output) <- c("LAKE_CODE","exp_rich", "shannon")
@@ -227,7 +300,6 @@ write.csv(MI_d2, 'Datasets/MI_data_QAQC.csv',row.names = FALSE)
 write.csv(MI_diversity_output, 'Datasets/MI_div.csv', row.names = FALSE )
 
 ## WISCONSIN
-#filter to just columns we need
 #change gear types 
 WI_d$GEAR2<-sapply( WI_d$GEAR, function(x) {
   if(x == "MINI_FYKE_NET") {'FYKE'}
@@ -253,12 +325,13 @@ WI_d$GEAR2<-sapply( WI_d$GEAR, function(x) {
                     if(x== 'DROP_NET') {'DROP'}
       }}}}}}}}}}})
 
+#filter to just columns we need and just gears 
+WI_d<-filter(WI_d, GEAR2 == "SHOCK" | GEAR2 == "FYKE" )
 
-
-WIdata1<-dplyr::select(WI_d, LAKE_CODE, GEAR2, SPP_CODE, Sum_Fish_Count) 
+WIdata1<-dplyr::select(WI_d, LAKE_CODE, GEAR2, SPP_CODE_new, Sum_Fish_Count) 
 
 #group by lake and gear and species to add up all the species for a gear 
-WI4 <-WIdata1 %>% group_by(LAKE_CODE, GEAR2, SPP_CODE) %>% summarise(total=sum(Sum_Fish_Count))
+WI4 <-WIdata1 %>% group_by(LAKE_CODE, GEAR2, SPP_CODE_new) %>% summarise(total=sum(Sum_Fish_Count))
 
 #make a new column called lake that is a combination of the lake code and gear type 
 WI4$lake<-paste(WI4$LAKE_CODE, WI4$GEAR2, sep="-")  
@@ -267,7 +340,7 @@ WI4$lake<-paste(WI4$LAKE_CODE, WI4$GEAR2, sep="-")
 W<-subset(WI4, select = -c(LAKE_CODE, GEAR2))
 
 #rearrange table to have species along the top for vegan package
-WInewformat<-tidyr::spread(W, SPP_CODE, total) # aggregate by lake name and gear and adds up all sp. 
+WInewformat<-tidyr::spread(W, SPP_CODE_new, total) # aggregate by lake name and gear and adds up all sp. 
 WInewformat[is.na(WInewformat)] <- 0 #NAs to 0 
 
 row.names(WInewformat)<-WInewformat$lake  #lake names as a rows
@@ -298,18 +371,17 @@ output_WI<- cbind(df, output_df)
 WI_d$LAKE_CODE<-as.factor(WI_d$LAKE_CODE)
 WIdata2<-left_join(WI_d, output_WI, by = c("LAKE_CODE", "GEAR2"="GEAR"))
 
-WIdata_lessgears<-filter(WIdata2, obs_spec > 1) #remove lake-gears with only one species 
-no_plat<-filter(output_WI, slope > 0.05 & obs_spec > 1) #results that do not meet the criteria 
-insuf_samples<-no_plat[!duplicated(paste(no_plat$LAKE_CODE)),] # how many lakes do we lose? 35
-bad_lakes<-dplyr::select(insuf_samples, LAKE_CODE) ##26 lakes
+no_plat<-filter(output_WI, slope > 0.05 | obs_spec == 1) #results that do not meet the criteria 
+insuf_samples<-no_plat[!duplicated(paste(no_plat$LAKE_CODE)),] # how many lakes do we lose? 25
+bad_lakes<-dplyr::select(insuf_samples, LAKE_CODE) ##25 lakes
 # select the observations from the original dataset minus waterbodies that do not plateau 
 #anti_join returns all rows from data that do not match bad_lakes)
-WI_d2<-anti_join(WIdata_lessgears, bad_lakes)
+WI_d2<-anti_join(WIdata2, bad_lakes)
 
 #use iNEXT to estimate expected number of species and shannon diversity for every lake/reservoir
 #filter to just columns we need
-WIdata_iNEXT<-dplyr::select(WI_d2, LAKE_CODE, SPP_CODE, Sum_Fish_Count) %>% 
-  group_by(LAKE_CODE, SPP_CODE) %>% summarise(total=sum(Sum_Fish_Count)) #group by lake and sp to add up all the sp for a lake 
+WIdata_iNEXT<-dplyr::select(WI_d2, LAKE_CODE, SPP_CODE_new, Sum_Fish_Count) %>% 
+  group_by(LAKE_CODE, SPP_CODE_new) %>% summarise(total=sum(Sum_Fish_Count)) #group by lake and sp to add up all the sp for a lake 
 
 #change the data format so that all of the lakes are columns and species are rows. This is the iNEXT format needed.
 newform<-tidyr::spread(WIdata_iNEXT, LAKE_CODE, total) #442 lakes left and 104 species
@@ -321,10 +393,10 @@ newform[is.na(newform)] <- 0
 newform<-as.data.frame(newform)
 
 #remove species codes 
-new<-subset(newform, select = -c(SPP_CODE))  #dataset format to use for iNEXT code 
+new<-subset(newform, select = -c(SPP_CODE_new))  #dataset format to use for iNEXT code 
 
 #run rafaction loop from iNEXT code 
-lake_names<-WIdata_iNEXT[!duplicated(paste(WIdata_iNEXT$LAKE_CODE)),] # 442 unique lakes
+lake_names<-WIdata_iNEXT[!duplicated(paste(WIdata_iNEXT$LAKE_CODE)),] # 443 unique lakes
 WI_diversity_output <-data.frame(matrix(NA, nrow = length(lake_names$LAKE_CODE), ncol = 3))
 WI_diversity_output[,1] = lake_names$LAKE_CODE #put all the lake names in the first column
 colnames(WI_diversity_output) <- c("LAKE_CODE","exp_rich", "shannon")
@@ -349,16 +421,16 @@ IA_d$GEAR2<-sapply(IA_d$GEAR, function(x) {
   }})
     
 #filter to just columns we need
-IAdata1<-dplyr::select(IA_d, LAKE_CODE, GEAR2, FISH_NAME, TOTAL_COUNT) 
+IAdata1<-dplyr::select(IA_d, LAKE_CODE, GEAR2, SPP_CODE_new, TOTAL_COUNT) 
 
 #group by lake and gear and species to add up all the species for a gear 
-IA4 <-IAdata1 %>% group_by(LAKE_CODE, GEAR2, FISH_NAME) %>% summarise(total=sum(TOTAL_COUNT))
+IA4 <-IAdata1 %>% group_by(LAKE_CODE, GEAR2, SPP_CODE_new) %>% summarise(total=sum(TOTAL_COUNT))
 
 #make a new column called lake that is a combination of the lake code and gear type 
 IA4$lake<-paste(IA4$LAKE_CODE, IA4$GEAR2, sep="-")  
 
 #rearrange table to have species along the top for vegan package
-IAnewformat<-tidyr::spread(IA4, FISH_NAME, total) # aggregate by lake name and gear and adds up all sp. 
+IAnewformat<-tidyr::spread(IA4, SPP_CODE_new, total) # aggregate by lake name and gear and adds up all sp. 
 IAnewformat[is.na(IAnewformat)] <- 0 #NAs to 0 
 
 IAnewformat<-subset(IAnewformat, select = -c(LAKE_CODE,GEAR2) )   #get rid of columns I do not want
@@ -390,18 +462,17 @@ output_IA<- cbind(df, output_df)
 IA_d$LAKE_CODE<-as.factor(IA_d$LAKE_CODE)
 IAdata2<-left_join(IA_d, output_IA, by = c("LAKE_CODE", "GEAR2"="GEAR"))
 
-IAdata_lessgears<-filter(IAdata2, obs_spec > 1) #remove lake-gears with only one species 
-no_plat<-filter(output_IA, slope > 0.05 & obs_spec > 1) #results that do not meet the criteria 
-insuf_samples<-no_plat[!duplicated(paste(no_plat$LAKE_CODE)),] # how many lakes do we lose? 35
+no_plat<-filter(output_IA, slope > 0.05 | obs_spec == 1) #results that do not meet the criteria 
+insuf_samples<-no_plat[!duplicated(paste(no_plat$LAKE_CODE)),] # how many lakes do we lose? 
 bad_lakes<-dplyr::select(insuf_samples, LAKE_CODE) #9 lakes
 # select the observations from the original dataset minus waterbodies that do not plateau 
 #anti_join returns all rows from data that do not match bad_lakes)
-IA_d2<-anti_join(IAdata_lessgears, bad_lakes)
+IA_d2<-anti_join(IAdata2, bad_lakes)
 
 #use iNEXT to estimate expected number of species and shannon diversity for every lake/reservoir
 #filter to just columns we need
-IAdata_iNEXT<-dplyr::select(IA_d2, LAKE_CODE, FISH_NAME, TOTAL_COUNT) %>% 
-  group_by(LAKE_CODE, FISH_NAME) %>% summarise(total=sum(TOTAL_COUNT)) #group by lake and sp to add up all the sp for a lake 
+IAdata_iNEXT<-dplyr::select(IA_d2, LAKE_CODE, SPP_CODE_new, TOTAL_COUNT) %>% 
+  group_by(LAKE_CODE, SPP_CODE_new) %>% summarise(total=sum(TOTAL_COUNT)) #group by lake and sp to add up all the sp for a lake 
 
 #change the data format so that all of the lakes are columns and species are rows. This is the iNEXT format needed.
 newform<-tidyr::spread(IAdata_iNEXT, LAKE_CODE, total) #118 lakes left and 38 species
@@ -413,7 +484,7 @@ newform[is.na(newform)] <- 0
 newform<-as.data.frame(newform)
 
 #remove species codes 
-new<-subset(newform, select = -c(FISH_NAME))  #dataset format to use for iNEXT code 
+new<-subset(newform, select = -c(SPP_CODE_new))  #dataset format to use for iNEXT code 
 
 #use iNEXT to estimate expected number of species   
 #run rafaction loop from iNEXT code 
@@ -454,17 +525,18 @@ NHME_d$GEAR2<-sapply(NHME_d$GEAR, function(x) {
                 else {("NA")}
                     }}}}}}}})
 
-#filter to just columns we need
-NHMEdata1<-dplyr::select(NHME_d, LAKE_ID, GEAR2, NAME_COM, TOTAL_COUNT) 
+#filter to just columns we need and just gear we need 
+NHME_d<-filter(NHME_d, GEAR2 == "SHOCK" | GEAR2 == "FYKE" | GEAR2 == "NA")
+NHMEdata1<-dplyr::select(NHME_d, LAKE_ID, GEAR2, SPP_CODE_new, TOTAL_COUNT) 
 
 #group by lake and gear and species to add up all the species for a gear 
-NHME4 <-NHMEdata1 %>% group_by(LAKE_ID, GEAR2,  NAME_COM) %>% summarise(total=sum(TOTAL_COUNT))
+NHME4 <-NHMEdata1 %>% group_by(LAKE_ID, GEAR2,  SPP_CODE_new) %>% summarise(total=sum(TOTAL_COUNT))
 
 #make a new column called lake that is a combination of the lake code and gear type 
 NHME4$lake<-paste(NHME4$LAKE_ID, NHME4$GEAR2, sep="-")  
 
 #rearrange table to have species along the top for vegan package
-NHMEnewformat<-tidyr::spread(NHME4, NAME_COM, total) # aggregate by lake name and gear and adds up all sp. 
+NHMEnewformat<-tidyr::spread(NHME4, SPP_CODE_new, total) # aggregate by lake name and gear and adds up all sp. 
 NHMEnewformat[is.na(NHMEnewformat)] <- 0 #NAs to 0 
 
 NHMEnewformat<-subset(NHMEnewformat, select = -c(LAKE_ID,GEAR2) )   #get rid of columns I do not want
@@ -495,18 +567,17 @@ output_NHME<- cbind(df, output_df)
 
 NHMEdata2<-left_join(NHME_d, output_NHME, by = c("LAKE_ID", "GEAR2"="GEAR"))
 
-NHMEdata_lessgears<-filter(NHMEdata2, obs_spec > 1) #remove lake-gears with only one species 
-no_plat<-filter(output_NHME, slope > 0.05 & obs_spec > 1) #results that do not meet the criteria 
-insuf_samples<-no_plat[!duplicated(paste(no_plat$LAKE_ID)),] # how many lakes do we lose? 35
-bad_lakes<-dplyr::select(insuf_samples, LAKE_ID) #5 lakes
+no_plat<-filter(output_NHME, slope > 0.05 | obs_spec == 1) #results that do not meet the criteria 
+insuf_samples<-no_plat[!duplicated(paste(no_plat$LAKE_ID)),] # how many lakes do we lose? 
+bad_lakes<-dplyr::select(insuf_samples, LAKE_ID) #9 lakes
 # select the observations from the original dataset minus gears that only collected one sp. and remove waterbodies that do not plateau 
 #anti_join returns all rows from data that do not match bad_lakes)
-NHME_d2<-anti_join(NHMEdata_lessgears, bad_lakes)
+NHME_d2<-anti_join(NHMEdata2, bad_lakes)
 
 #use iNEXT to estimate expected number of species and shannon diversity for every lake/reservoir
 #filter to just columns we need
-NHMEdata_iNEXT<-dplyr::select(NHME_d2, LAKE_ID, NAME_COM, TOTAL_COUNT) %>% 
-  group_by(LAKE_ID, NAME_COM) %>% summarise(total=sum(TOTAL_COUNT)) #group by lake and sp to add up all the sp for a lake 
+NHMEdata_iNEXT<-dplyr::select(NHME_d2, LAKE_ID, SPP_CODE_new, TOTAL_COUNT) %>% 
+  group_by(LAKE_ID, SPP_CODE_new) %>% summarise(total=sum(TOTAL_COUNT)) #group by lake and sp to add up all the sp for a lake 
 
 #change the data format so that all of the lakes are columns and species are rows. This is the iNEXT format needed.
 newform<-tidyr::spread(NHMEdata_iNEXT, LAKE_ID, total) #79 lakes left and 48 species
@@ -518,7 +589,7 @@ newform[is.na(newform)] <- 0
 newform<-as.data.frame(newform)
 
 #remove species codes 
-new<-subset(newform, select = -c(NAME_COM))  #dataset format to use for iNEXT code 
+new<-subset(newform, select = -c(SPP_CODE_new))  #dataset format to use for iNEXT code 
 
 #use iNEXT to estimate expected number of species   
 #run rafaction loop from iNEXT code 
@@ -542,7 +613,9 @@ for (i in 1:ncol(new)) {  #this runs all columns
 write.csv(NHME_d2, 'Datasets/NHME_data_QAQC.csv',row.names = FALSE)
 write.csv(NHME_diversity_output, 'Datasets/NHME_div.csv', row.names = FALSE )
 
-res<-read.csv("/Users/katelynking/Desktop/Chap 2 Fish/reservoir data/res_class_man_all.csv", header=TRUE)
+#filter out NH and Maine for summary stats
+NH_d<-filter(NHME_diversity_output, grepl("NH", LAKE_CODE, fixed = TRUE)) #26 lakes 
+ME_d<-filter(NHME_diversity_output, grepl("ME", LAKE_CODE, fixed = TRUE)) #54 lakes 
 
 
 #------ Step 3: Merge fish data with LAGOS -------
@@ -552,10 +625,15 @@ crs(lakes_shape) #shows me the projection of the shapefiles so that I can projec
 prjnew <- CRS(" +proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs
               +ellps=GRS80 +towgs84=0,0,0")
 
-#project Michigan Data 
-MIpoints<-dplyr::select(MIdata2, LAKE_CODE, LAT_DD, LONG_DD)
+#project data 
+IA<-read.csv('Datasets/IA_data_QAQC.csv')
+MI<-read.csv('Datasets/MI_data_QAQC.csv')
+NHME<-read.csv('Datasets/NHME_data_QAQC.csv')
+WI<-read.csv('Datasets/WI_data_QAQC.csv')
+
+MIpoints<-dplyr::select(MI, LAKE_CODE, LAT_DD, LONG_DD)
 MIpoints<- MIpoints[!duplicated(paste(MIpoints$LAKE_CODE)),] #select only one row of each lake
-MIpoints<-MIpoints[!(is.na(MIpoints$LAT_DD)),] #get rid of two lakes that don't have lat/long
+MIpoints<-MIpoints[!(is.na(MIpoints$LAT_DD)),] #get rid of lakes that don't have coords
 x <- MIpoints$LONG_DD
 y <- MIpoints$LAT_DD
 
@@ -565,13 +643,21 @@ prj <- CRS("+proj=longlat +datum=NAD83")
 lake.ll <- SpatialPoints(coords, proj4string=prj)   
 MI.aea <- spTransform(lake.ll, prjnew)
 plot(MI.aea)
+MI_coords<-as.data.frame(MI.aea)
+
+### LINK TO LAGOS ### 
+#use the over function to match points to LAGOS polygons. 
+#Returns a data.frame of the second argument with row entries corresponding to the first argument
+LAGOS.MI.match<-sp::over(MI.aea, lakes_shape) #x = "SpatialPoints", y = "SpatialPolygonsDataFrame"
+LAGOS.MI.match$LAKE_CODE<-paste(MIpoints$LAKE_CODE) # 2 don't have coords  
+LAGOS.MI.ids<-dplyr::select(LAGOS.MI.match, LAKE_CODE, Permanent_, lagoslakei, HU4_ZoneID, HU6_ZoneID, HU8_ZoneID, HU12_ZoneI) #2 lakes don't match to LAGOS (left with 87 lakes)
 
 #project Wisconsin Data 
 WI_info2$WBIC2<-as.character(WI_info2$WBIC)
-WIdataLL<-left_join(WIdata2, WI_info2, by = c("LAKE_CODE" = "WBIC2")) ## join the lat lon info # lose 23 lakes that dont match lake codes
+WIdataLL<-left_join(WI, WI_info2, by = c("LAKE_CODE" = "WBIC")) ## join the lat lon info 
 WIpoints<-dplyr::select(WIdataLL, LAKE_CODE, LAT_DD, LONG_DD)
 WIpoints<- WIpoints[!duplicated(paste(WIpoints$LAKE_CODE)),] #select only one row of each lake
-WIpoints<-WIpoints[!(is.na(WIpoints$LAT_DD)),] #get rid of two lakes that don't have lat/long
+WIpoints<-WIpoints[!(is.na(WIpoints$LAT_DD)),] #get rid of lakes that don't have lat/long (down to 424)
 x <- WIpoints$LONG_DD
 y <- WIpoints$LAT_DD
 
@@ -582,11 +668,18 @@ lake.ll <- SpatialPoints(coords, proj4string=prj)
 WI.aea <- spTransform(lake.ll, prjnew)
 plot(WI.aea)
 
+### LINK TO LAGOS ### 
+#use the over function to match points to LAGOS polygons. 
+#Returns a data.frame of the second argument with row entries corresponding to the first argument
+LAGOS.WI.match<-sp::over(WI.aea, lakes_shape) #x = "SpatialPoints", y = "SpatialPolygonsDataFrame"
+LAGOS.WI.match$LAKE_CODE<-paste(WIpoints$LAKE_CODE) 
+LAGOS.WI.ids<-dplyr::select(LAGOS.WI.match, LAKE_CODE, Permanent_, lagoslakei, HU4_ZoneID, HU6_ZoneID, HU8_ZoneID, HU12_ZoneI) #down to 340 lakes taht match to LAGOS
+
 #Project Iowa data 
-IApoints<-dplyr::select(IAdata2, LAKE_CODE, UTM_NAD83__N, UTM_NAD83__E)
+IApoints<-dplyr::select(IA, LAKE_CODE, UTM_NAD83__N, UTM_NAD83__E)
 IApoints<- IApoints[!duplicated(paste(IApoints$LAKE_CODE)),] #select only one row of each lake
-x <- IApoints$UTM_NAD83__N
-y <- IApoints$UTM_NAD83__E
+x <- IApoints$UTM_NAD83__E
+y <- IApoints$UTM_NAD83__N
 
 #make a dataframe of the coordinates, project, transform
 coords<-data.frame(x=x,y=y)
@@ -594,10 +687,22 @@ prj <- CRS("+proj=utm +zone=15 +datum=NAD83")
 lake.utm <- SpatialPoints(coords, proj4string=prj)   
 IA.aea <- spTransform(lake.utm, prjnew)
 plot(IA.aea)
+#convert to lat/lon to match other States
+IA.ll <- spTransform(lake.utm, CRS("+proj=longlat +datum=WGS84"))
+IA_coords<-as.data.frame(IA.ll)
+plot(IA.ll)
+IA_coords$LAKE_CODE = IApoints$LAKE_CODE
+
+### LINK TO LAGOS ### 
+#use the over function to match points to LAGOS polygons. 
+#Returns a data.frame of the second argument with row entries corresponding to the first argument
+LAGOS.IA.match<-sp::over(IA.aea, lakes_shape) #x = "SpatialPoints", y = "SpatialPolygonsDataFrame"
+LAGOS.IA.match$LAKE_CODE<-paste(IApoints$LAKE_CODE) 
+LAGOS.IA.ids<-dplyr::select(LAGOS.IA.match, LAKE_CODE, Permanent_, lagoslakei, HU4_ZoneID, HU6_ZoneID, HU8_ZoneID, HU12_ZoneI) #down to 98 lakes taht match to LAGOS
 
 #Project NH/ME data 
-NHMEpoints<-dplyr::select(NHMEdata2, LAKE_CODE, LAT_DD, LON_DD)
-NHMEpoints<- NHMEpoints[!duplicated(paste(NHMEpoints$LAKE_CODE)),] #select only one row of each lake
+NHMEpoints<-dplyr::select(NHME, LAKE_ID, LAT_DD, LON_DD)
+NHMEpoints<- NHMEpoints[!duplicated(paste(NHMEpoints$LAKE_ID)),] #select only one row of each lake
 x <- NHMEpoints$LON_DD
 y <- NHMEpoints$LAT_DD
 
@@ -611,286 +716,89 @@ plot(NHME.aea)
 ### LINK TO LAGOS ### 
 #use the over function to match points to LAGOS polygons. 
 #Returns a data.frame of the second argument with row entries corresponding to the first argument
-only.MI.fish<-sp::over(MI.aea, lakes_shape) #x = "SpatialPoints", y = "SpatialPolygonsDataFrame"
-only.MI.fish$LAKE_CODE<-paste(MIpoints$LAKE_CODE)  
+LAGOS.NHME.match<-sp::over(NHME.aea, lakes_shape) #x = "SpatialPoints", y = "SpatialPolygonsDataFrame"
+LAGOS.NHME.match$LAKE_CODE<-paste(NHMEpoints$LAKE_ID) 
+LAGOS.NHME.ids<-dplyr::select(LAGOS.NHME.match, LAKE_CODE, Permanent_, lagoslakei, HU4_ZoneID, HU6_ZoneID, HU8_ZoneID, HU12_ZoneI) #down to 74 lakes that match to LAGOS
 
+## Classify as lake or reservoir ###
+LAGOSall<-gtools::smartbind(LAGOS.MI.ids, LAGOS.WI.ids, LAGOS.IA.ids, LAGOS.NHME.ids)
+LAGOSall$lagoslakeid<-as.integer(as.character(LAGOSall$lagoslakei))
 
-#get rid of NAs (93 lakes left) 
-only.MI.fish<-only.MI.fish[!(is.na(only.MI.fish$lagoslakeid)),]
+res<-read.csv("/Users/katelynking/Desktop/Chap 2 Fish/reservoir data/res_class_man_all.csv", header=TRUE) %>%
+  dplyr::select(LAKE_TYPE, lagoslakeid)
 
+res_m<-read.csv("/Users/katelynking/Desktop/Chap 2 Fish/reservoir data/res_class_model_all.csv", header=TRUE) %>%
+  dplyr::select(Prediction, lagoslakeid)
+names(res_m)[1]<-"LAKE_TYPE"
 
-#------ Step 3: add possible predictor values from LAGOS -------
-#install.packages("LAGOSNE")
-library(LAGOSNE)
-lg <- lagosne_load("1.087.1")
+res_lakes<-gtools::smartbind(res, res_m)
 
-#watershed scale land use/cover
-IWS_LULC <- lg$iws.lulc
-IWS_LULC <- data.frame(lagoslakeid=IWS_LULC$lagoslakeid,
-                       iws_openwater2006_pct=IWS_LULC$iws_nlcd2006_pct_11,
-                       iws_developed_open2006_pct=IWS_LULC$iws_nlcd2006_pct_21,
-                       iws_developed_low2006_pct=IWS_LULC$iws_nlcd2006_pct_22,
-                       iws_developed_med2006_pct=IWS_LULC$iws_nlcd2006_pct_23,
-                       iws_developed_high2006_pct=IWS_LULC$iws_nlcd2006_pct_24,
-                       iws_deciduous2006_pct=IWS_LULC$iws_nlcd2006_pct_41,
-                       iws_evergreen2006_pct=IWS_LULC$iws_nlcd2006_pct_42,
-                       iws_mixedforest2006_pct=IWS_LULC$iws_nlcd2006_pct_43,
-                       iws_pasture_hay2006_pct=IWS_LULC$iws_nlcd2006_pct_81,
-                       iws_rowcrops2006_pct=IWS_LULC$iws_nlcd2006_pct_82,
-                       iws_roaddensity_mperha=IWS_LULC$iws_roaddensity_density_mperha,
-                       iws_wetland_woody2006_pct=IWS_LULC$iws_nlcd2006_pct_90,
-                       iws_wetland_emergent2006_pct=IWS_LULC$iws_nlcd2006_pct_95)
+res_class<-left_join(LAGOSall, res_lakes)
 
-IWS_LULC$iws_nlcd2006_urb <- IWS_LULC$iws_developed_open2006_pct +
-  IWS_LULC$iws_developed_low2006_pct + IWS_LULC$iws_developed_med2006_pct +
-  IWS_LULC$iws_developed_high2006_pct
+res_class<-res_class[!(is.na(res_class$LAKE_TYPE)),]
 
-IWS_LULC$iws_nlcd2006_for <- IWS_LULC$iws_deciduous2006_pct +
-  IWS_LULC$iws_evergreen2006_pct + IWS_LULC$iws_mixedforest2006_pct
+res_class$TYPE<-ifelse(res_class$LAKE_TYPE == 'NL', 'NL', 'RES' )
+IDs<-subset(res_class, select = -c(lagoslakei,LAKE_TYPE) )          
 
-IWS_LULC$iws_nlcd2006_agr <- IWS_LULC$iws_pasture_hay2006_pct +
-  IWS_LULC$iws_rowcrops2006_pct
+#join to data
+MI_lagosid<-left_join(MI, IDs)
+WI$LAKE_ID<-as.character(WI$LAKE_CODE)
+WI_lagosid<-left_join(WI, IDs, by=c('LAKE_ID' = 'LAKE_CODE'))
+IA$LAKE_ID<-as.character(IA$LAKE_CODE)
+IA_lagosid<-left_join(IA, IDs, by=c('LAKE_ID' = 'LAKE_CODE'))
+NHME_lagosid<-left_join(NHME, IDs, by=c('LAKE_ID' = 'LAKE_CODE'))
 
-IWS_LULC$iws_nlcd2006_wet <- IWS_LULC$iws_wetland_woody2006_pct +
-  IWS_LULC$iws_wetland_emergent2006_pct
+###add coords 
+WI_lagos_ll<-left_join(WI_lagosid, WIpoints)
+IA_lagos_ll<-left_join(IA_lagosid, IA_coords)
 
-# lake morphometry and connectivity
-# max and mean depth
-depth <- data.frame(lagoslakeid=lg$lakes_limno$lagoslakeid,
-                    maxdepth_m=lg$lakes_limno$maxdepth,
-                    meandepth_m=lg$lakes_limno$meandepth)
+#### Combine datasets 
+MI_com<-dplyr::select(MI_lagosid, LAKE_CODE, LAT_DD, LONG_DD, SPP_CODE_new, Total_Number_Caught, obs_spec, lagoslakeid, Permanent_, HU4_ZoneID, HU6_ZoneID, HU8_ZoneID, HU12_ZoneI, TYPE)
+NHME_com<-dplyr::select(NHME_lagosid, LAKE_ID, LAT_DD, LON_DD, SPP_CODE_new, TOTAL_COUNT, obs_spec, lagoslakeid, Permanent_, HU4_ZoneID, HU6_ZoneID, HU8_ZoneID, HU12_ZoneI, TYPE)
+WI_com<-dplyr::select(WI_lagos_ll, LAKE_ID, LAT_DD, LONG_DD, SPP_CODE_new, Sum_Fish_Count, obs_spec, lagoslakeid, Permanent_, HU4_ZoneID, HU6_ZoneID, HU8_ZoneID, HU12_ZoneI, TYPE)
+IA_com<-dplyr::select(IA_lagos_ll, LAKE_ID, x, y, SPP_CODE_new, TOTAL_COUNT, lagoslakeid, obs_spec, Permanent_, HU4_ZoneID, HU6_ZoneID, HU8_ZoneID, HU12_ZoneI, TYPE)
 
-#lake area, perim, sdf, lat, long, elevation, and all ids
-lake_morphometry <- data.frame(lagoslakeid=lg$locus$lagoslakeid,
-                               HU4_ZoneID=lg$locus$hu4_zoneid,
-                               HU6_ZoneID=lg$locus$hu6_zoneid,
-                               HU8_ZoneID=lg$locus$hu8_zoneid,
-                               HU12_ZoneID=lg$locus$hu12_zoneid,
-                               nhd_lat=lg$locus$nhd_lat,
-                               nhd_long=lg$locus$nhd_long,
-                               lakearea_ha=lg$locus$lake_area_ha,
-                               lakeperim_m=lg$locus$lake_perim_meters,
-                               elevation_m=lg$locus$ elevation_m)
+names(MI_com)[1]<-"LAKE_ID"  #lake name = LAKE_ID
+names(MI_com)[3]<-"LON_DD"
+names(MI_com)[5]<-"TOTAL_COUNT"
+names(WI_com)[3]<-"LON_DD"
+names(WI_com)[5]<-"TOTAL_COUNT"
+names(IA_com)[2]<-"LON_DD"
+names(IA_com)[3]<-"LAT_DD"
+IA_com<-IA_com[,c(1,3,2,4,5,6,7,8,9,10, 11, 12, 13)]
+lakesall<-gtools::smartbind(MI_com, IA_com, WI_com, NHME_com)
+lakesall<-lakesall[!(is.na(lakesall$lagoslakeid)),]  # remove lakes that did not match to LAGOS (33780 to 29541 obs)
 
-#calculate shoreline development: convert lake area to km2; convert lake perim to km
-#lake_sdf = lake_perim_km / (2 * (pi * lake_area_km2)^1/2
-lake_morphometry$lakearea_km2 <- lake_morphometry$lakearea_ha / 100
-lake_morphometry$lakeperim_km <- lake_morphometry$lakeperim_m / 1000
-lake_morphometry$lake_sdf     <- lake_morphometry$lakeperim_km/(2 *
-                                                                  (pi*lake_morphometry$lakearea_km2)^0.5)
+allsp<-lakesall[!duplicated(paste(lakesall$SPP_CODE_new)),] #255 down to 170 to 143 to 135
 
+IA_div<-read.csv('Datasets/IA_div.csv')
+IA_div$LAKE_ID<-  as.character(as.integer(IA_div$LAKE_CODE))
+MI_div<-read.csv('Datasets/MI_div.csv') 
+MI_div$LAKE_ID<-  as.character(as.factor(MI_div$LAKE_CODE))
+NHME_div<-read.csv('Datasets/NHME_div.csv')
+NHME_div$LAKE_ID<-  as.character(as.factor(NHME_div$LAKE_CODE))
+WI_div<-read.csv('Datasets/WI_div.csv')
+WI_div$LAKE_ID<-  as.character(as.integer(WI_div$LAKE_CODE))
 
-# iws connectivity
-lake_conn <- lg$lakes.geo
-lake_conn <- data.frame(lagoslakeid=lake_conn$lagoslakeid,
-                        glaciation=lake_conn$latewisconsinglaciation_glacial,
-                        conn_class=lake_conn$lakeconnection,
-                        iws_upstream_lakes_4ha_area_ha=lake_conn$upstream_lakes_4ha_area_ha,
-                        iws_wlconnections_area_ha=lake_conn$wlconnections_allwetlands_contributing_area_ha)
+divdata<-gtools::smartbind(WI_div, NHME_div, MI_div, IA_div )
+lakesall<-left_join(lakesall, divdata, by=("LAKE_ID")) %>% subset(select = -c(LAKE_CODE) )
+data.table::setnames(lakesall, old=c("HU12_ZoneI"), new=c("HU12_ZoneID"))
 
-IWS_conn <- lg$iws.conn
-IWS_conn <- data.frame(lagoslakeid=IWS_conn$lagoslakeid,
-                       iws_streamdensity_mperha=IWS_conn$iws_streamdensity_streams_density_mperha)
-#### HU4 variables 
-#climate 
-HU4_climate <- lg$hu4.chag
-HU4_climate <- data.frame(HU4_ZoneID=HU4_climate$hu4_zoneid,
-                          prism_precip_mean=HU4_climate$hu4_prism_ppt_30yr_normal_800mm2_annual_mean,
-                          prism_temp_mean=HU4_climate$hu4_prism_tmean_30yr_normal_800mm2_annual_mean)
+write.csv(lakesall, ("Datasets/lakesall.csv"))
 
-HU4_LULC <- lg$hu4.lulc
-HU4_LULC <- data.frame(HU4_ZoneID=HU4_LULC$hu4_zoneid,
-                       developed_open2006_pct=HU4_LULC$hu4_nlcd2006_pct_21,
-                       developed_low2006_pct=HU4_LULC$hu4_nlcd2006_pct_22,
-                       developed_med2006_pct=HU4_LULC$hu4_nlcd2006_pct_23,
-                       developed_high2006_pct=HU4_LULC$hu4_nlcd2006_pct_24,
-                       deciduous2006_pct=HU4_LULC$hu4_nlcd2006_pct_41,
-                       evergreen2006_pct=HU4_LULC$hu4_nlcd2006_pct_42,
-                       mixedforest2006_pct=HU4_LULC$hu4_nlcd2006_pct_43,
-                       pasture_hay2006_pct=HU4_LULC$hu4_nlcd2006_pct_81,
-                       rowcrops2006_pct=HU4_LULC$hu4_nlcd2006_pct_82,
-                       hu4_roaddensity_mperha=HU4_LULC$hu4_roaddensity_density_mperha,
-                       wetland_woody2006_pct=HU4_LULC$hu4_nlcd2006_pct_90,
-                       wetland_emergent2006_pct=HU4_LULC$hu4_nlcd2006_pct_95)
-
-HU4_LULC$hu4_nlcd2006_urb <- HU4_LULC$developed_open2006_pct +
-  HU4_LULC$developed_low2006_pct + HU4_LULC$developed_med2006_pct +
-  HU4_LULC$developed_high2006_pct
-
-HU4_LULC$hu4_nlcd2006_for <- HU4_LULC$deciduous2006_pct +
-  HU4_LULC$evergreen2006_pct + HU4_LULC$mixedforest2006_pct
-
-HU4_LULC$hu4_nlcd2006_agr <- HU4_LULC$pasture_hay2006_pct +
-  HU4_LULC$rowcrops2006_pct
-
-HU4_LULC$hu4_nlcd2006_wet <- HU4_LULC$wetland_woody2006_pct +
-  HU4_LULC$wetland_emergent2006_pct
-
-# HU4 connectivity
-HU4_conn <- lg$hu4.conn
-HU4_conn <- data.frame(HU4_ZoneID=HU4_conn$hu4_zoneid,
-                       hu4_streamdensity_mperha=HU4_conn$hu4_streamdensity_streams_density_mperha,
-                       hu4_lakes_area_ha=HU4_conn$hu4_lakes_overlapping_area_ha,
-                       hu4_wetlands_area_ha=HU4_conn$hu4_wl_allwetlandsdissolved_overlapping_area_ha)
-
-
-#merge all local predictors
-local_preds <- left_join(lake_morphometry, depth, by = "lagoslakeid") %>%
-  left_join(IWS_LULC, by = "lagoslakeid") %>%
-  left_join(lake_conn, by = "lagoslakeid") %>%
-  left_join(IWS_conn, by = "lagoslakeid")
-
-#merge all HU4 predictors 
-hu4_preds <- left_join(HU4_climate, HU4_conn, by = "HU4_ZoneID") %>%
-  left_join(HU4_LULC, by = "HU4_ZoneID") 
-
-## Merge LAGOS to MI lakes 
-local_preds$lagoslakeid<-as.factor(local_preds$lagoslakeid)
-fish.local<-left_join(fish.LAGOS, local_preds, by = 'lagoslakeid')
-
-MI.fish.LAGOS<-left_join(fish.local, hu4_preds, by = 'HU4_ZoneID')
-
-#plot to make sure join was correct
-ggplot() + 
-  geom_point(data=MI.fish.LAGOS, aes(x=nhd_long, y=nhd_lat))
-
-#add reservoir and natural lake data 
-#lakes<- read.csv("/Users/katelynking/Desktop/mi_nl_ll.csv", header=TRUE)
-
-#newfish<-dplyr::left_join(MI.fish.LAGOS, lakes, by= "lagoslakeid")
-
-
-##pull out only columns for initial model development 
-#fish.data<-dplyr::select(MI.fish.LAGOS, lakearea_km2, elevation_m, LakeConnec, lagoslakei, 
- #                        HU4_ZoneID, richness, nhd_lat, nhd_long, lake_sdf, 
-  #                       iws_nlcd2006_wet, iws_nlcd2006_agr, iws_nlcd2006_for, iws_nlcd2006_urb, iws_roaddensity_mperha,
-   #                      iws_upstream_lakes_4ha_area_ha, iws_wlconnections_area_ha, iws_streamdensity_mperha,
-    #                     prism_precip_mean, prism_temp_mean, 
-     #                    hu4_streamdensity_mperha,hu4_lakes_area_ha,hu4_wetlands_area_ha, 
-      #                   hu4_nlcd2006_urb, hu4_nlcd2006_for, hu4_nlcd2006_agr, hu4_nlcd2006_wet, hu4_roaddensity_mperha)
-
-write.csv(MI.fish.LAGOS, "Data/MI_lake_data.csv", row.names = FALSE)
-
-#fish.data<-read.csv('Data/MI_lake_data.csv')
-
-#------ Step 4: calculate beta diversity for HUC4s
-library(vegan)
-#filter to just columns we need
-MIdata1<-dplyr::select(MIdata, LAKE_CODE, SPP_CODE, Total_Number_Caught) 
-
-#group by lake and species to add up all the species for a lake
-MIdata2 <-MIdata1 %>% group_by(LAKE_CODE, SPP_CODE) %>% summarise(total=sum(Total_Number_Caught))
-MIdata3<-tidyr::spread(MIdata2, SPP_CODE, total)
-
-HUC_codes<-dplyr::select(MI.fish.LAGOS, LAKE_CODE, lagoslakeid, HU4_ZoneID, HU6_ZoneID)
-MIdata4<-dplyr::left_join(MIdata3, HUC_codes)
-MIdata4[is.na(MIdata4)] <- 0 #NAs to 0 
-MIdata4<-MIdata4[!(is.na(MIdata4$HU6_ZoneID)),] #get rid of 5 lakes that didn't match to LAGOS
-
-### create a function to calculate beta diversity average for a region
- calcbeta<-function(x) { # x = a dataframe   
-   new<- subset(x, select = -c(LAKE_CODE, lagoslakeid, HU4_ZoneID, HU12_ZoneID))
-   #dissimilarity
-   dis<-vegdist(new, "bray", binary = TRUE) 
-   #average dissimilarity
-   avg<-mean(dis)
-   return(avg)
- }
- 
-# loop to run dissimilarity on all HUC 4s
-HUC_string <-as.character(unique(MIdata4$HU4_ZoneID))
-
-output_df <- data.frame(HU4_ZoneID=NA, beta=NA)            
-for (i in 1:8) {
-  sub<-subset(MIdata4, HU4_ZoneID == HUC_string[i] )
-  beta<-calcbeta(sub)
-  output_df[i,1]=HUC_string[i]
-  output_df[i,2]=beta
-} 
-
-### loop to run on all HUC12s 
-HUC_string <-as.character(unique(MIdata4$HU12_ZoneID))
-
-output_df <- data.frame(HU6_ZoneID=NA, beta=NA)            
-for (i in 1:10) {
-  sub<-subset(MIdata4, HU6_ZoneID == HUC_string[i] )
-  beta<-calcbeta(sub)
-  output_df[i,1]=HUC_string[i]
-  output_df[i,2]=beta
-} 
-
-
-#join the beta outputs 
-MI.fish_beta <-left_join(MI.fish.LAGOS, output_df, by = 'HU6_ZoneID')
-
-## compare alpha and beta diversity (Pool et al 2014)
-ggplot(data = MI.fish_beta, (aes(x = richness, y = beta ))) + geom_point() +
-  geom_smooth(method='lm') 
-
-## bar graph of the disimilarity values within each HUC to compare distribution (left skewed in the Roden 2018 paper)
-
-## making maps 
-#base map of michigan 
-usa<-map_data("usa")  #pull out the usa map
-states<-map_data("state")  #pull out the states maps 
-MImap <- subset(states, region %in% c("michigan")) # and within that select michigan 
-p<-ggplot(data = MImap) + 
-  geom_polygon(aes(x = long, y = lat, group = group), fill = "white", color = "black") + #this fill MI white and outline is black
-  coord_fixed(1.3) 
-
-#map of beta diversity at the HUC4 scale 
-p + 
-  geom_point(data=MI.fish_beta, aes(x=nhd_long, y=nhd_lat, colour = c(beta))) + scale_colour_gradient(low = "yellow", high = "darkblue") + 
-   labs(color="beta diversity")
-
-#map of beta diversity at the HUC6 scale 
-p + 
-  geom_point(data=MI.fish_beta, aes(x=nhd_long, y=nhd_lat, colour = c(beta))) + scale_colour_gradient(low = "yellow", high = "darkblue") + 
-  labs(color="beta diversity")
-
-#map of alpha diversity 
-p + 
-  geom_point(data=MI.fish_beta, aes(x=nhd_long, y=nhd_lat, colour = c(richness))) + scale_colour_gradient(low = "yellow", high = "darkblue") +
-  labs(color="alpha diversity")
-
-####### HUC4s ######################
-#bring in HU4 polygons for visual 
-HU4.poly<-readOGR(dsn = "/Users/katelynking/Desktop/HU4", layer = "HU4")
-crs(HU4.poly) #shows me the projection of the shapefiles so that I can project the same to the points 
-
-prjnew <- CRS(" +proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs
-              +ellps=GRS80 +towgs84=0,0,0")
-
-####change to an sf object   
-sf_HU4<-sf::st_as_sf(HU4.poly)
-
-#have to have the zone id in there every time for this to work 
-HU4MI<-dplyr::filter(sf_HU4, ZoneID == "HU4_24" | ZoneID == "HU4_31" | ZoneID =="HU4_30"|ZoneID == "HU4_37"|ZoneID =="HU4_40" |ZoneID =="HU4_39" |ZoneID =="HU4_32"|ZoneID == "HU4_41" )  
-#convert it back to a spatial polygons data frame
-HU4MI.sp<-as(HU4MI, "Spatial")
-crs(HU4MI.sp)
-plot(HU4MI.sp)
-
-ggplot(data = HU4MI.sp) + 
-  geom_polygon(aes(x = long, y = lat, group = group), fill = factor(ZoneID), color = "black") + #this fill MI white and outline is black
-  coord_fixed(1.3) 
-
-## crop one polygon to another extent 
-library(raster) 
-MImap.sp<- SpatialPolygons(MImap, pO=MImap$order, proj4string=prjnew) 
-
-MImap.sp<-spTransform(MImap, prjnew)
-out <- crop(HU4MI.sp, MImap)
-
-#Marion et al. 2017: If we denote the number of species shared between two sites as a and the numbers of unique species (not shared) as b and c, 
-#then S = a + b + c and α = (2 a + b + c)/2 so that β_w = (b+c)/(2 a + b + c).
-#This is the Sørensen dissimilarity as defined in vegan function vegdist with argument binary = TRUE. 
-## example ways of calculating the same Sørensen dissimilarity -- gives the same answer.
-#1 means that the communities are totally different. 
-data(BCI)
-d0 <- vegdist(BCI, "bray", binary = TRUE)  # binary: (A+B-2*J)/(A+B)
-d2 <- designdist(BCI, "(b+c)/(2*a+b+c)", abcd = TRUE)
-
-
-#------ Step 5: standardize and transform predictor values from LAGOS -------
+### ### ### ### ### ### ### ### ### ### ### 
+### reservoirs and natural lake 8 values 
+### ### ### ### ### ### ### ### ### ### ### 
+lake<-filter(locus, lagoslakeid == "5033") 
+coords <- coordinatize(lake)
+#library(mapview)
+mapview(coords) 
+# 2798 big lake in MI - many IDs but all NL 
+# 3224 also in MI  - doesnt have a poly for - NL (like a river)
+# 4463 in Wisconsin  - many ids - NL? or Res
+# 5033 in Wisconsin  - many ids -NL
+#4328 border of IA and Nebraska - NL
+# 5562 WI on the edge of Superior - classified as NL
+# 5581 edge of iowa and Minnesota  - classified as NL
+#5583 edge of iowa and Minnesota  - classified as NL
 
