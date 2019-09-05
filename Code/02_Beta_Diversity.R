@@ -4,48 +4,56 @@
 
 #load libraries
 library(vegan)
+library(dplyr)
+library(ggplot2)
+
+#load data
+lake_dat<-read.csv('Datasets/lakesall.csv')
+stream_dat<-read.csv('Datasets/streamsall.csv')
+order<-dplyr::select(stream_order_info, COMIDv2_JR, order_class)
+stream_dat<-left_join(stream_dat, order)
 
 #------ calculate beta diversity for HUC4s -------
-NL<-filter(lakesall, TYPE == "NL")
-RES<-filter(lakesall, TYPE == "RES")
+#filter to just columns we need and rename them 
+dataL<-dplyr::select(lake_dat, LAKE_ID, SPP_CODE_new, TOTAL_COUNT, conn_class, HU4_ZoneID, HU8_ZoneID, HU12_ZoneID, LAT_DD, LON_DD) 
+dataS<-dplyr::select(stream_dat, COMIDv2_JR, SPP_CODE_new, ind_count, order_class, HU4_ZoneID, HU8_ZoneID, HU12_ZoneID, lat, lon) 
+setnames(dataS, old=c("COMIDv2_JR", "ind_count", 'order_class', "lat", "lon"), new=c("SITE_ID", "TOTAL_COUNT", "CLASS", "LAT_DD", "LON_DD"))
+setnames(dataL, old=c("LAKE_ID", "conn_class"), new=c("SITE_ID", "CLASS"))
 
-#filter to just columns we need
-dataL<-dplyr::select(NL, LAKE_ID, SPP_CODE_new, TOTAL_COUNT) 
-dataR<-dplyr::select(RES, LAKE_ID, SPP_CODE_new, TOTAL_COUNT) 
-dataS<-dplyr::select(streamsall, COMIDv2_JR, SPP_CODE_new, ind_count) 
+ISO<-filter(dataL, CLASS == "Isolated")
+HW_L<-filter(dataL, CLASS == "Headwater")
+DR_ST<-filter(dataL, CLASS== "DR_Stream")
+DR_STLK<-filter(dataL, CLASS == "DR_LakeStream")
+HW<-filter(dataS, CLASS == "HW")
+MID<-filter(dataS, CLASS == "MID")
+RIVER<-filter(dataS, CLASS == "RIVER")
 
-#group by eco and species to add up all the species for each ind. eco
-dataL2 <-dataL %>% group_by(LAKE_ID, SPP_CODE_new) %>% summarise(total=sum(TOTAL_COUNT))
-dataR2 <-dataR %>% group_by(LAKE_ID, SPP_CODE_new) %>% summarise(total=sum(TOTAL_COUNT))
-dataS2 <-dataS %>% group_by(COMIDv2_JR, SPP_CODE_new) %>% summarise(total=sum(ind_count))
+#create a function to reformat each dataset 
+reform<-function(x) { # x = a dataframe   
+  dat <- x %>% group_by(SITE_ID, SPP_CODE_new) %>% summarise(total=sum(TOTAL_COUNT)) #group by eco and species 
+  dat2<-tidyr::spread(dat, SPP_CODE_new, total) #reformat the data table 
+  dat2[is.na(dat2)] <- 0 #NAs to 0 
+  codes<-dplyr::select(x, SITE_ID, HU4_ZoneID, HU8_ZoneID, HU12_ZoneID, LAT_DD, LON_DD) #need to join ID and codes back to table
+  codes2<-codes[!duplicated(paste(codes$SITE_ID)),]
+  dat3<-dplyr::left_join(dat2, codes2, by = "SITE_ID")
+  return(dat3)
+}
 
-dataL3<-tidyr::spread(dataL2, SPP_CODE_new, total) #330 lakes
-dataR3<-tidyr::spread(dataR2, SPP_CODE_new, total) #263 res
-dataS3<-tidyr::spread(dataS2, SPP_CODE_new, total) #1983 streams
+ISO2<-reform(ISO)
+HW_L2<-reform(HW_L)
+DR_ST2<-reform(DR_ST)
+DR_STLK2<-reform(DR_STLK)
+HW2<-reform(HW)
+MID2<-reform(MID)
+RIVER2<-reform(RIVER)
 
-dataL3[is.na(dataL3)] <- 0 #NAs to 0 
-dataR3[is.na(dataR3)] <- 0 #NAs to 0 
-dataS3[is.na(dataS3)] <- 0 #NAs to 0 
-
-L_HUC_codes<-dplyr::select(NL, LAKE_ID, lagoslakeid, HU4_ZoneID, LAT_DD, LON_DD, exp_rich)
-R_HUC_codes<-dplyr::select(RES, LAKE_ID, lagoslakeid, HU4_ZoneID, LAT_DD, LON_DD, exp_rich)
-S_HUC_codes<-dplyr::select(streamsall, COMIDv2_JR, ZoneID, lat, lon, exp_rich)
-
-Lcodes<-L_HUC_codes[!duplicated(paste(L_HUC_codes$LAKE_ID)),] 
-Rcodes<-R_HUC_codes[!duplicated(paste(R_HUC_codes$LAKE_ID)),] 
-Scodes<-S_HUC_codes[!duplicated(paste(S_HUC_codes$COMIDv2_JR)),] 
-
-dataL4<-dplyr::left_join(dataL3, Lcodes, by = "LAKE_ID")
-dataR4<-dplyr::left_join(dataR3, Rcodes, by = "LAKE_ID")
-dataS4<-dplyr::left_join(dataS3, Scodes, by = "COMIDv2_JR")
-
-summary(dataL4$HU4_ZoneID) #how many lake in each HUC 
-summary(dataR4$HU4_ZoneID) #how many res in each HUC 
-summary(dataS4$ZoneID) #how many stream in each HUC 
+summary(ISO2$HU4_ZoneID) #how many lake in each HUC 
+summary(HW_L2$HU4_ZoneID) #how many res in each HUC 
+summary(DR_ST2$HU4_ZoneID) #how many stream in each HUC 
 
 ### create a function to calculate beta diversity average for a region
 calcbeta<-function(x) { # x = a dataframe   
-  new<- subset(x, select = -c(LAKE_ID, lagoslakeid, HU4_ZoneID, LAT_DD, LON_DD, exp_rich))
+  new<- subset(x, select = -c(SITE_ID, HU4_ZoneID, HU8_ZoneID, HU12_ZoneID, LAT_DD, LON_DD))
   #dissimilarity
   dis<-vegdist(new, "bray", binary = TRUE) 
   #average dissimilarity
@@ -53,52 +61,248 @@ calcbeta<-function(x) { # x = a dataframe
   return(avg)
 }
 
+# ISOLATED LAKES: loop to run dissimilarity on all HUCs
+HUC4_string <-as.character(unique(ISO2$HU4_ZoneID)) 
+HUC8_string <-as.character(unique(ISO2$HU8_ZoneID)) 
+HUC12_string <-as.character(unique(ISO2$HU12_ZoneID)) 
 
-# loop to run dissimilarity on all HUC 4s
-LHUC_string <-as.character(unique(dataL4$HU4_ZoneID)) #lakes
+ISO_beta_4 <- data.frame(HU4_ZoneID=NA, beta=NA)
+ISO_beta_8 <- data.frame(HU8_ZoneID=NA, beta=NA)
+ISO_beta_12 <- data.frame(HU12_ZoneID=NA, beta=NA)
 
-L_output_df <- data.frame(HU4_ZoneID=NA, beta=NA)  # lakes          
-for (i in 1:28) {
-  sub<-subset(dataL4, HU4_ZoneID == LHUC_string[i] )
+#HUC4
+for (i in 1:19) {
+  sub<-subset(ISO2, HU4_ZoneID == HUC4_string[i] )
   beta<-calcbeta(sub)
-  L_output_df[i,1]=LHUC_string[i]
-  L_output_df[i,2]=beta
+  ISO_beta_4[i,1]=HUC4_string[i]
+  ISO_beta_4[i,2]=beta
 } 
 
-RHUC_string <-as.character(unique(dataR4$HU4_ZoneID)) #res
-
-R_output_df <- data.frame(HU4_ZoneID=NA, beta=NA)  # res          
-for (i in 1:28) {
-  sub<-subset(dataR4, HU4_ZoneID == RHUC_string[i] )
+#HUC8
+for (i in 1:46) {
+  sub<-subset(ISO2, HU8_ZoneID == HUC8_string[i] )
   beta<-calcbeta(sub)
-  R_output_df[i,1]=RHUC_string[i]
-  R_output_df[i,2]=beta
+  ISO_beta_8[i,1]=HUC8_string[i]
+  ISO_beta_8[i,2]=beta
 } 
 
+#HUC12
+for (i in 1:87) {
+  sub<-subset(ISO2, HU12_ZoneID == HUC12_string[i] )
+  beta<-calcbeta(sub)
+  ISO_beta_12[i,1]=HUC12_string[i]
+  ISO_beta_12[i,2]=beta
+} 
 
-calcbetaS<-function(x) { # x = a dataframe   
-  new<- subset(x, select = -c(COMIDv2_JR, ZoneID, lat, lon, exp_rich))
-  #dissimilarity
-  dis<-vegdist(new, "bray", binary = TRUE) 
-  #average dissimilarity
-  avg<-mean(dis)
-  return(avg)
-}
+# HW LAKES: loop to run dissimilarity on all HUCs
+HUC4_string <-as.character(unique(HW_L2$HU4_ZoneID)) 
+HUC8_string <-as.character(unique(HW_L2$HU8_ZoneID)) 
+HUC12_string <-as.character(unique(HW_L2$HU12_ZoneID)) 
 
-SHUC_string <-as.character(unique(dataS4$ZoneID)) #stream
+HWL_beta_4 <- data.frame(HU4_ZoneID=NA, beta=NA)
+HWL_beta_8 <- data.frame(HU8_ZoneID=NA, beta=NA)
+HWL_beta_12 <- data.frame(HU12_ZoneID=NA, beta=NA)
 
-S_output_df <- data.frame(HU4_ZoneID=NA, beta=NA)  # stream          
+#HUC4
+for (i in 1:22) {
+  sub<-subset(HW_L2, HU4_ZoneID == HUC4_string[i] )
+  beta<-calcbeta(sub)
+  HWL_beta_4[i,1]=HUC4_string[i]
+  HWL_beta_4[i,2]=beta
+} 
+
+#HUC8
+for (i in 1:42) {
+  sub<-subset(HW_L2, HU8_ZoneID == HUC8_string[i] )
+  beta<-calcbeta(sub)
+  HWL_beta_8[i,1]=HUC8_string[i]
+  HWL_beta_8[i,2]=beta
+} 
+
+#HUC12
+for (i in 1:70) {
+  sub<-subset(HW_L2, HU12_ZoneID == HUC12_string[i] )
+  beta<-calcbeta(sub)
+  HWL_beta_12[i,1]=HUC12_string[i]
+  HWL_beta_12[i,2]=beta
+} 
+
+# DR_st LAKES: loop to run dissimilarity on all HUCs
+HUC4_string <-as.character(unique(DR_ST2$HU4_ZoneID)) 
+HUC8_string <-as.character(unique(DR_ST2$HU8_ZoneID)) 
+HUC12_string <-as.character(unique(DR_ST2$HU12_ZoneID)) 
+
+DRL_beta_4 <- data.frame(HU4_ZoneID=NA, beta=NA)
+DRL_beta_8 <- data.frame(HU8_ZoneID=NA, beta=NA)
+DRL_beta_12 <- data.frame(HU12_ZoneID=NA, beta=NA)
+
+#HUC4
+for (i in 1:28) {
+  sub<-subset(DR_ST2, HU4_ZoneID == HUC4_string[i] )
+  beta<-calcbeta(sub)
+  DRL_beta_4[i,1]=HUC4_string[i]
+  DRL_beta_4[i,2]=beta
+} 
+
+#HUC8
+for (i in 1:99) {
+  sub<-subset(DR_ST2, HU8_ZoneID == HUC8_string[i] )
+  beta<-calcbeta(sub)
+  DRL_beta_8[i,1]=HUC8_string[i]
+  DRL_beta_8[i,2]=beta
+} 
+
+#HUC12
+for (i in 1:188) {
+  sub<-subset(DR_ST2, HU12_ZoneID == HUC12_string[i] )
+  beta<-calcbeta(sub)
+  DRL_beta_12[i,1]=HUC12_string[i]
+  DRL_beta_12[i,2]=beta
+} 
+
+# DR_stlk LAKES: loop to run dissimilarity on all HUCs
+HUC4_string <-as.character(unique(DR_STLK2$HU4_ZoneID)) 
+HUC8_string <-as.character(unique(DR_STLK2$HU8_ZoneID)) 
+HUC12_string <-as.character(unique(DR_STLK2$HU12_ZoneID)) 
+
+DRLL_beta_4 <- data.frame(HU4_ZoneID=NA, beta=NA)
+DRLL_beta_8 <- data.frame(HU8_ZoneID=NA, beta=NA)
+DRLL_beta_12 <- data.frame(HU12_ZoneID=NA, beta=NA)
+
+#HUC4
+for (i in 1:27) {
+  sub<-subset(DR_STLK2, HU4_ZoneID == HUC4_string[i] )
+  beta<-calcbeta(sub)
+  DRLL_beta_4[i,1]=HUC4_string[i]
+  DRLL_beta_4[i,2]=beta
+} 
+
+#HUC8
+for (i in 1:75) {
+  sub<-subset(DR_STLK2, HU8_ZoneID == HUC8_string[i] )
+  beta<-calcbeta(sub)
+  DRLL_beta_8[i,1]=HUC8_string[i]
+  DRLL_beta_8[i,2]=beta
+} 
+
+#HUC12
+for (i in 1:193) {
+  sub<-subset(DR_STLK2, HU12_ZoneID == HUC12_string[i] )
+  beta<-calcbeta(sub)
+  DRLL_beta_12[i,1]=HUC12_string[i]
+  DRLL_beta_12[i,2]=beta
+} 
+
+# HW STREAMS: loop to run dissimilarity on all HUCs
+HUC4_string <-as.character(unique(HW2$HU4_ZoneID)) 
+HUC8_string <-as.character(unique(HW2$HU8_ZoneID)) 
+HUC12_string <-as.character(unique(HW2$HU12_ZoneID)) 
+
+HW2_beta_4 <- data.frame(HU4_ZoneID=NA, beta=NA)
+HW2_beta_8 <- data.frame(HU8_ZoneID=NA, beta=NA)
+HW2_beta_12 <- data.frame(HU12_ZoneID=NA, beta=NA)
+
+#HUC4
+for (i in 1:27) {
+  sub<-subset(HW2, HU4_ZoneID == HUC4_string[i] )
+  beta<-calcbeta(sub)
+  HW2_beta_4[i,1]=HUC4_string[i]
+  HW2_beta_4[i,2]=beta
+} 
+
+#HUC8
+for (i in 1:113) {
+  sub<-subset(HW2, HU8_ZoneID == HUC8_string[i] )
+  beta<-calcbeta(sub)
+  HW2_beta_8[i,1]=HUC8_string[i]
+  HW2_beta_8[i,2]=beta
+} 
+
+#HUC12
+for (i in 1:682) {
+  sub<-subset(HW2, HU12_ZoneID == HUC12_string[i] )
+  beta<-calcbeta(sub)
+  HW2_beta_12[i,1]=HUC12_string[i]
+  HW2_beta_12[i,2]=beta
+} 
+
+# MID STREAMS: loop to run dissimilarity on all HUCs
+HUC4_string <-as.character(unique(MID2$HU4_ZoneID)) 
+HUC8_string <-as.character(unique(MID2$HU8_ZoneID)) 
+HUC12_string <-as.character(unique(MID2$HU12_ZoneID)) 
+
+MID2_beta_4 <- data.frame(HU4_ZoneID=NA, beta=NA)
+MID2_beta_8 <- data.frame(HU8_ZoneID=NA, beta=NA)
+MID2_beta_12 <- data.frame(HU12_ZoneID=NA, beta=NA)
+
+#HUC4
 for (i in 1:32) {
-  sub<-subset(dataS4, ZoneID == SHUC_string[i] )
-  beta<-calcbetaS(sub)
-  S_output_df[i,1]=SHUC_string[i]
-  S_output_df[i,2]=beta
+  sub<-subset(MID2, HU4_ZoneID == HUC4_string[i] )
+  beta<-calcbeta(sub)
+  MID2_beta_4[i,1]=HUC4_string[i]
+  MID2_beta_4[i,2]=beta
 } 
 
+#HUC8
+for (i in 1:128) {
+  sub<-subset(MID2, HU8_ZoneID == HUC8_string[i] )
+  beta<-calcbeta(sub)
+  MID2_beta_8[i,1]=HUC8_string[i]
+  MID2_beta_8[i,2]=beta
+} 
+
+#HUC12
+for (i in 1:452) {
+  sub<-subset(MID2, HU12_ZoneID == HUC12_string[i] )
+  beta<-calcbeta(sub)
+  MID2_beta_12[i,1]=HUC12_string[i]
+  MID2_beta_12[i,2]=beta
+} 
+
+# RIVERS : loop to run dissimilarity on all HUCs
+HUC4_string <-as.character(unique(RIVER2$HU4_ZoneID)) 
+HUC8_string <-as.character(unique(RIVER2$HU8_ZoneID)) 
+HUC12_string <-as.character(unique(RIVER2$HU12_ZoneID)) 
+
+RIVER2_beta_4 <- data.frame(HU4_ZoneID=NA, beta=NA)
+RIVER2_beta_8 <- data.frame(HU8_ZoneID=NA, beta=NA)
+RIVER2_beta_12 <- data.frame(HU12_ZoneID=NA, beta=NA)
+
+#HUC4
+for (i in 1:16) {
+  sub<-subset(RIVER2, HU4_ZoneID == HUC4_string[i] )
+  beta<-calcbeta(sub)
+  RIVER2_beta_4[i,1]=HUC4_string[i]
+  RIVER2_beta_4[i,2]=beta
+} 
+
+#HUC8
+for (i in 1:27) {
+  sub<-subset(RIVER2, HU8_ZoneID == HUC8_string[i] )
+  beta<-calcbeta(sub)
+  RIVER2_beta_8[i,1]=HUC8_string[i]
+  RIVER2_beta_8[i,2]=beta
+} 
+
+#HUC12
+for (i in 1:36) {
+  sub<-subset(RIVER2, HU12_ZoneID == HUC12_string[i] )
+  beta<-calcbeta(sub)
+  RIVER2_beta_12[i,1]=HUC12_string[i]
+  RIVER2_beta_12[i,2]=beta
+} 
+
+
+#################################################
+#################################################
 #join the beta outputs 
-L_fish_beta <-left_join(dataL4, L_output_df, by = 'HU4_ZoneID')
-R_fish_beta <-left_join(dataR4, R_output_df, by = 'HU4_ZoneID')
-S_fish_beta <-left_join(dataS4, S_output_df, by = c('ZoneID' = 'HU4_ZoneID'))
+ISO_fish_beta <-left_join(ISO2, ISO_beta_4, by = 'HU4_ZoneID')
+HWL_fish_beta <-left_join(HW_L2, HWL_beta_4, by = 'HU4_ZoneID')
+DRL_fish_beta <-left_join(DR_ST2, DRL_beta_4, by = c('HU4_ZoneID'))
+DRLL_fish_beta <-left_join(DR_STLK2, DRLL_beta_4, by = 'HU4_ZoneID')
+HWS_fish_beta <-left_join(HW2, HW2_beta_4, by = 'HU4_ZoneID')
+MID_fish_beta <-left_join(MID2, MID2_beta_4, by = c('HU4_ZoneID'))
+R_fish_beta <-left_join(RIVER2, RIVER2_beta_4, by = 'HU4_ZoneID')
 
 ## compare alpha and beta diversity (Pool et al 2014)
 ggplot(data = L_fish_beta, (aes(x = exp_rich, y = beta ))) + geom_point() +
@@ -122,91 +326,71 @@ p<-ggplot(data = submap) +
   coord_fixed(1.3) 
 
 #map of beta diversity at the HUC4 scale 
-HUC4_lake_beta<-p + 
-  geom_point(data=L_fish_beta, aes(x=LON_DD, y=LAT_DD, colour = c(beta))) + scale_colour_gradient(low = "yellow", high = "darkblue") + 
-  labs(color="beta diversity")
-cowplot::save_plot("Figures/HU4_lake_beta.pdf", HUC4_lake_beta, base_width = 6,
-                   base_height = 5, dpi=600)
+map_beta<-function(x) { # x = a dataframe   
+  p + 
+    geom_point(data=x, aes(x=LON_DD, y=LAT_DD, colour = c(beta))) + scale_colour_gradient(low = "yellow", high = "darkblue") + 
+    labs(color="beta diversity")
+}
 
-HUC4_res_beta<-p + 
-  geom_point(data=R_fish_beta, aes(x=LON_DD, y=LAT_DD, colour = c(beta))) + scale_colour_gradient(low = "yellow", high = "darkblue") + 
-  labs(color="beta diversity")
-cowplot::save_plot("Figures/HU4_res_beta.pdf", HUC4_res_beta, base_width = 6,
-                   base_height = 5, dpi=600)
-
-HUC4_stream_beta<-p + 
-  geom_point(data=S_fish_beta, aes(x=lon, y=lat, colour = c(beta))) + scale_colour_gradient(low = "yellow", high = "darkblue") + 
-  labs(color="beta diversity")
-cowplot::save_plot("Figures/HU4_stream_beta.pdf", HUC4_stream_beta, base_width = 6,
-                   base_height = 5, dpi=600)
+map_beta(ISO_fish_beta)
+map_beta(HWL_fish_beta)
+map_beta(DRL_fish_beta)
+map_beta(DRLL_fish_beta)
+map_beta(HWS_fish_beta)
+map_beta(MID_fish_beta)
+map_beta(R_fish_beta)
 
 
-#map of alpha diversity 
-L_alpha<-p + 
-  geom_point(data=L_fish_beta, aes(x=LON_DD, y=LAT_DD, colour = c(exp_rich))) + scale_colour_gradient(low = "yellow", high = "darkblue") +
-  labs(color="alpha diversity")
-cowplot::save_plot("Figures/L_alpha.pdf", L_alpha, base_width = 6,
-                   base_height = 5, dpi=600)
-R_alpha<-p + 
-  geom_point(data=R_fish_beta, aes(x=LON_DD, y=LAT_DD, colour = c(exp_rich))) + scale_colour_gradient(low = "yellow", high = "darkblue") +
-  labs(color="alpha diversity")
-cowplot::save_plot("Figures/R_alpha.pdf", R_alpha, base_width = 6,
-                   base_height = 5, dpi=600)
+beta_I<-as.data.frame(dplyr::select(ISO_fish_beta, SITE_ID, beta)) 
+beta_I$CLASS<-'ISO'
+beta_H<-as.data.frame(dplyr::select(HWL_fish_beta, SITE_ID, beta))
+beta_H$CLASS<-'HW_LAKE'
+beta_D<-as.data.frame(dplyr::select(DRL_fish_beta, SITE_ID, beta))
+beta_D$CLASS<-'DR_ST'
+beta_L<-as.data.frame(dplyr::select(DRLL_fish_beta, SITE_ID, beta))
+beta_L$CLASS<-'DR_STLK'
+beta_W<-as.data.frame(dplyr::select(HWS_fish_beta, SITE_ID, beta))
+beta_W$CLASS<-'HW_ST'
+beta_M<-as.data.frame(dplyr::select(MID_fish_beta, SITE_ID, beta))
+beta_M$CLASS<-'MID'
+beta_R<-as.data.frame(dplyr::select(R_fish_beta, SITE_ID, beta))
+beta_R$CLASS<-'RIVER'
 
-S_alpha<-p + 
-  geom_point(data=S_fish_beta, aes(x=lon, y=lat, colour = c(exp_rich))) + scale_colour_gradient(low = "yellow", high = "darkblue") +
-  labs(color="alpha diversity")
-cowplot::save_plot("Figures/S_alpha.pdf", S_alpha, base_width = 6,
-                   base_height = 5, dpi=600)
+allbetas<-gtools::smartbind(beta_I, beta_H, beta_D, beta_L,
+                  beta_W, beta_M, beta_R) 
+allbetas$CLASS<-as.factor(allbetas$CLASS)
+allbetas$CLASS <- ordered(allbetas$CLASS, c("HW_LAKE", "DR_ST", "RIVER", "DR_STLK", "ISO", "HW_ST", "MID"))
 
-summary(S_fish_beta)
+ggplot(allbetas, aes(x = CLASS, y = beta, color = CLASS)) +
+  geom_boxplot() +
+  #scale_color_manual(values = c("darkblue", "gold", "darkgreen" )) + 
+  labs(x = NULL)   # Remove x axis label
+#save a plot
+#cowplot::save_plot("Figures/HU4_lake_beta.pdf", HUC4_lake_beta, base_width = 6,
+     #              base_height = 5, dpi=600)
+
+
 #------ calc Beta by ecosystem type -----
 #combine datasets ##
 library(data.table)
-lake_dat<-dplyr::select(NL, LAKE_ID, SPP_CODE_new, TOTAL_COUNT) 
-res_dat<-dplyr::select(RES, LAKE_ID, SPP_CODE_new, TOTAL_COUNT) 
-st_dat<-dplyr::select(streamsall, COMIDv2_JR, SPP_CODE_new, ind_count) 
-setnames(st_dat, old=c("COMIDv2_JR", "ind_count"), new=c("SITE_ID", "TOTAL_COUNT"))
-setnames(lake_dat, old=c("LAKE_ID"), new=c("SITE_ID"))
-setnames(res_dat, old=c("LAKE_ID"), new=c("SITE_ID"))
-#add a type column 
-lake_dat$TYPE<-"LAKE"
-res_dat$TYPE<-"RES"
-st_dat$TYPE<-"STREAM"
+L_dat<-dplyr::select(lake_dat, LAKE_ID, SPP_CODE_new, TOTAL_COUNT, conn_class) 
+S_dat<-dplyr::select(stream_dat, COMIDv2_JR, SPP_CODE_new, ind_count, order_class) 
+setnames(S_dat, old=c("COMIDv2_JR", "ind_count", 'order_class'), new=c("SITE_ID", "TOTAL_COUNT", "CLASS"))
+setnames(L_dat, old=c("LAKE_ID", "conn_class"), new=c("SITE_ID", "CLASS"))
 
-st_dat$SITE_ID<-as.character(as.integer(st_dat$SITE_ID))
-allecos<-gtools::smartbind(lake_dat, res_dat, st_dat)
 
-###CHANGED ABOVE SO THIS DOESNT WORK NOW 
-#ANOVA 
-anova(lm(exp_rich ~ TYPE, data = allecos))
-library(agricolae) #library needed for LSD test 
-LSDout<-LSD.test(allecos$exp_rich, allecos$TYPE, 2569, 48.2, alpha=0.05)  #specify the DF and MSE of the residuals
+S_dat$SITE_ID<-as.character(as.integer(S_dat$SITE_ID))
+allecos<-gtools::smartbind(L_dat, S_dat)
+allecos<-allecos[!(is.na(allecos$CLASS)),]
 
-###CHANGED ABOVE SO THIS DOESNT WORK NOW 
-# boxplots to visualize data 
-ggplot(allecos, aes(x = TYPE, y = exp_rich, color = TYPE)) +
-  geom_boxplot() +
-  scale_color_manual(values = c("darkblue", "gold", "darkgreen" )) + 
-  labs(x = NULL)   # Remove x axis label
-
-###CHANGED ABOVE SO THIS DOESNT WORK NOW 
-## distribution plots by groups
-a <- ggplot(allecos, aes(x = exp_rich))
-a+geom_density(aes(fill = TYPE), alpha = 0.4) +
-  scale_fill_manual(values = c("deepskyblue", "green3", "mediumpurple"))
-
-#filter to just columns we need
-d1<-dplyr::select(allecos, SITE_ID, SPP_CODE_new, TOTAL_COUNT, TYPE) 
-
-#group by TYPE and species to add up all the species for a TYPE
-d2 <-allecos %>% group_by(TYPE, SPP_CODE_new) %>% summarise(total=sum(TOTAL_COUNT))
+#group by class and species to add up all the species for a TYPE
+d2 <-allecos %>% group_by(CLASS, SPP_CODE_new) %>% summarise(total=sum(TOTAL_COUNT))
 d3<-tidyr::spread(d2, SPP_CODE_new, total) 
 d3[is.na(d3)] <- 0 #NAs to 0 
 
 ### calculate beta diversity between types
    
-new <- subset(d3, select = -c(TYPE))
+new <- subset(d3, select = -c(CLASS))
 
 #dissimilarity 1=lakes, 2=res, 3=streams
 dis_NL_RES<-vegdist(new, "bray", binary = TRUE) 
@@ -249,3 +433,109 @@ out <- crop(HU4MI.sp, MImap)
 data(BCI)
 d0 <- vegdist(BCI, "bray", binary = TRUE)  # binary: (A+B-2*J)/(A+B)
 d2 <- designdist(BCI, "(b+c)/(2*a+b+c)", abcd = TRUE)
+
+#------ alpha diversity by ecosystem type ----- 
+lakes<-lake_dat[!duplicated(paste(lake_dat$LAKE_ID)),] 
+summary(lakes$conn_class)
+dataL<-dplyr::select(lakes, LAKE_ID, LAT_DD, LON_DD, obs_spec, exp_rich, conn_class) 
+setnames(dataL, old=c("LAKE_ID", "conn_class"), new=c("SITE_ID", "CLASS"))
+dataL$SITE_ID<-as.character(dataL$SITE_ID)
+ISO<-filter(dataL, CLASS == "Isolated")
+HW_L<-filter(dataL, CLASS == "Headwater")
+DR_ST<-filter(dataL, CLASS== "DR_Stream")
+DR_STLK<-filter(dataL, CLASS == "DR_LakeStream")
+
+stream_info<-read.csv("Datasets/stream_reach_info.csv")
+dataS<-dplyr::select(stream_info, COMIDv2_JR, lat, lon, obs_spec, exp_rich, order_class) 
+setnames(dataS, old=c("COMIDv2_JR", "lat", "lon", "order_class"), new=c("SITE_ID", "LAT_DD", "LON_DD", "CLASS"))
+dataS$SITE_ID<-as.character(dataS$SITE_ID)
+HW<-filter(dataS, CLASS == "HW")
+MID<-filter(dataS, CLASS == "MID")
+RIVER<-filter(dataS, CLASS == "RIVER")
+
+allecos<-gtools::smartbind(HW, MID, RIVER,ISO, HW_L, DR_ST, DR_STLK)
+summary(allecos$CLASS)
+
+#ANOVA 
+anova(lm(exp_rich ~ CLASS, data = allecos))
+library(agricolae) #library needed for LSD test 
+LSDout<-LSD.test(allecos$exp_rich, allecos$CLASS, 2569, 38.0, alpha=0.05, p.adj = "bonferroni")  #specify the DF and MSE of the residuals
+
+anova(lm(obs_spec ~ CLASS, data = allecos))
+LSDout<-LSD.test(allecos$obs_spec, allecos$CLASS, 2569, 20.0, alpha=0.05, p.adj = "bonferroni")  #specify the DF and MSE of the residuals
+
+# boxplots to visualize data 
+ggplot(allecos, aes(x = reorder(CLASS, exp_rich, FUN=median), y = exp_rich, color = CLASS)) +
+  geom_boxplot() +
+  #scale_color_manual(values = c("darkblue", "gold", "darkgreen" )) + 
+  labs(x = NULL)   # Remove x axis label
+
+## distribution plots by groups
+a <- ggplot(allecos, aes(x = exp_rich))
+a+geom_density(aes(fill = CLASS), alpha = 0.4) 
+
+## frequency plots of the classes
+ggplot(allecos, aes(CLASS)) +
+  geom_bar(fill = "#0073C2FF") 
+
+L_alpha<-p + 
+  geom_point(data=L_fish_beta, aes(x=LON_DD, y=LAT_DD, colour = c(exp_rich))) + scale_colour_gradient(low = "yellow", high = "darkblue") +
+  labs(color="alpha diversity")
+cowplot::save_plot("Figures/L_alpha.pdf", L_alpha, base_width = 6,
+                   base_height = 5, dpi=600)
+R_alpha<-p + 
+  geom_point(data=R_fish_beta, aes(x=LON_DD, y=LAT_DD, colour = c(exp_rich))) + scale_colour_gradient(low = "yellow", high = "darkblue") +
+  labs(color="alpha diversity")
+cowplot::save_plot("Figures/R_alpha.pdf", R_alpha, base_width = 6,
+                   base_height = 5, dpi=600)
+
+p + 
+  geom_point(data=HW, aes(x=LON_DD, y=LAT_DD, colour = c(exp_rich))) + scale_colour_gradient(low = "yellow", high = "darkblue") +
+  labs(color="alpha diversity") + 
+  ggtitle("headwater streams")
+cowplot::save_plot("Figures/S_alpha.pdf", S_alpha, base_width = 6,
+                   base_height = 5, dpi=600)
+
+p + 
+  geom_point(data=MID, aes(x=LON_DD, y=LAT_DD, colour = c(exp_rich))) + scale_colour_gradient(low = "yellow", high = "darkblue") +
+  labs(color="alpha diversity") + 
+  ggtitle("mid-reach streams")
+
+p + 
+  geom_point(data=RIVER, aes(x=LON_DD, y=LAT_DD, colour = c(exp_rich))) + scale_colour_gradient(low = "yellow", high = "darkblue") +
+  labs(color="alpha diversity") + 
+  ggtitle("rivers")
+
+p + 
+  geom_point(data=ISO, aes(x=LON_DD, y=LAT_DD, colour = c(exp_rich))) + scale_colour_gradient(low = "yellow", high = "darkblue") +
+  labs(color="alpha diversity") + 
+  ggtitle("isolated lakes")
+
+p + 
+  geom_point(data=HW_L, aes(x=LON_DD, y=LAT_DD, colour = c(exp_rich))) + scale_colour_gradient(low = "yellow", high = "darkblue") +
+  labs(color="alpha diversity") + 
+  ggtitle("headwater lakes")
+
+p + 
+  geom_point(data=DR_ST, aes(x=LON_DD, y=LAT_DD, colour = c(exp_rich))) + scale_colour_gradient(low = "yellow", high = "darkblue") +
+  labs(color="alpha diversity") + 
+  ggtitle("drainage lakes")
+
+p + 
+  geom_point(data=DR_STLK, aes(x=LON_DD, y=LAT_DD, colour = c(exp_rich))) + scale_colour_gradient(low = "yellow", high = "darkblue") +
+  labs(color="alpha diversity") + 
+  ggtitle("drainage lakes with upstream lakes")
+
+
+
+### PLOT distribution of stream sizes 
+p + geom_point(data=dataS, aes(x=LON_DD, y=LAT_DD, colour = CLASS), alpha=0.7) +
+  scale_color_manual(values = c('#66c2a5', '#fc8d62','#8da0cb')) +
+  labs(color="stream class")
+
+p+geom_point(data=dataL, aes(x = LON_DD, y = LAT_DD, colour=CLASS), alpha=0.7) + 
+  scale_color_manual(values = c('#a6611a', '#dfc27d','#80cdc1','#018571')) +
+  labs(color="lake class")
+
+
+summary(S_fish_beta)
