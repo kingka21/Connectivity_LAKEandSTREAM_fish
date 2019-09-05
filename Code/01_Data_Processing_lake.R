@@ -784,11 +784,26 @@ divdata<-gtools::smartbind(WI_div, NHME_div, MI_div, IA_div )
 lakesall<-left_join(lakesall, divdata, by=("LAKE_ID")) %>% subset(select = -c(LAKE_CODE) )
 data.table::setnames(lakesall, old=c("HU12_ZoneI"), new=c("HU12_ZoneID"))
 
-write.csv(lakesall, ("Datasets/lakesall.csv"))
+# Add connectivity class from LAGOS 
+library(LAGOSNE)
+lg <- lagosne_load("1.087.1") 
+lake_conn <- lg$lakes.geo
+lake_conn <- data.frame(lagoslakeid=lake_conn$lagoslakeid,
+                        conn_class=lake_conn$lakeconnection)
+
+lakesall<-left_join(lakesall, lake_conn)
+write.csv(lakesall, ("Datasets/lakesall.csv"), row.names = FALSE)
 
 ### ### ### ### ### ### ### ### ### ### ### 
 ### reservoirs and natural lake 8 values 
 ### ### ### ### ### ### ### ### ### ### ### 
+
+
+lake<-filter(locus, lagoslakeid == "5033") 
+coords <- coordinatize(lake)
+library(mapview)
+mapview(coords) 
+
 lake<-filter(locus, lagoslakeid == "5033") 
 coords <- coordinatize(lake)
 #library(mapview)
