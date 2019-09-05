@@ -217,7 +217,7 @@ for (k in 1:length(listgdb)){
 setwd("/Users/katelynking/Desktop/NHD_medres/")
   #colnames(IDs)[colnames(IDs)=="Permanent_Identifier"] <- "PID"
 
-H401<-sf::st_read('NHD_H_0401_HU4_GDB.gdb', layer="NHDFlowline") %>%
+H401<-sf::st_read('NHD_H_0401_HU4_GDB.gdb', layer="NHDFlowline") %>%  #get reach code and permIDs to match High-res and med-res
   dplyr::select(Permanent_Identifier, ReachCode) %>%
   st_drop_geometry()
 H402<-sf::st_read('NHD_H_0402_HU4_GDB.gdb', layer="NHDFlowline") %>%
@@ -273,7 +273,7 @@ st_order04<-nhd_plus_load(vpu = 4, "NHDPlusAttributes", "PlusFlowlineVAA") %>%
   dplyr::select(ComID, StreamOrde, ReachCode) #has stream order
 eromflow04 <- nhd_plus_load(4, "EROMExtension", "EROM_MA0001") %>%  # has stream flow
   dplyr::select(ComID, Q0001F)
-dat04<-left_join(st_order04, eromflow04)#merge
+dat04<-left_join(st_order04, eromflow04) #merge
 
 #list<-c(H401, H402, H403, H404, H405, H406, H407, H408, H409, H410, H411, H412, H413, H414)
 #list<-c('H401', 'H402', 'H403','H404', 'H405', 'H406', 'H407', 'H408', 'H409', 'H410', 'H411', 'H412', 'H413', 'H414')#Function wont work!! 
@@ -283,7 +283,7 @@ dat04<-left_join(st_order04, eromflow04)#merge
   # write.csv(join, file.path("/Users/katelynking/Desktop/NHDmed_streams/", paste(list[i], ".csv", sep="")), row.names = FALSE)
 #}
 
-join<-dplyr::left_join(dat04, H401)
+join<-dplyr::left_join(dat04, H401) #merge the med res data with the IDs from high res by reach code 
 colnames(join)[colnames(join)=="Permanent_Identifier"] <- "PID"
 write.csv(join, file.path("/Users/katelynking/Desktop/NHDmed_streams/H401.csv"), row.names = FALSE)
 
