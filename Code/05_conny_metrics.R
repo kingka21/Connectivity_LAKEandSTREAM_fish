@@ -640,3 +640,345 @@ up4 = traverse_flowlines(Inf, lake8339$nhdid, direction = 'in')
 up_streams4 = get_shape_by_id(up4$permanent_, dataset = 'nhdh', feature_type = 'flowline')
 mapview(lake_2, color="yellow") + mapview(up_streams4, color="yellow") + mapview(lake_head, color="orange") + 
   mapview(lake_3, color="green") + mapview(lake_4, color="purple")+ mapview(lake_5, color="red")
+
+
+
+##### pull nhdplusV2 flowlines for Qi to re-make graphs 
+### Use Joe's package
+# install.packages("devtools")
+devtools::install_github("jsta/nhdR")
+library(nhdR)
+## need VPUs (Vector Processing Units) 
+nhd_plus_get(vpu = 1, "NHDPlusAttributes")
+nhd_plus_list(vpu = 1, "NHDPlusAttributes")  ##PlusFlow and PLusFlowlineVAA 
+nhd_plus_get(vpu = 1, "NHDSnapshot")
+
+Flowlineinfo1<-nhd_plus_load(vpu = 1, "NHDSnapshot", "NHDFlowline") %>% 
+  dplyr::select(COMID, WBAREACOMI, FTYPE, FCODE, LENGTHKM) %>% # need the shape file for ComID, FCode, FType, and WBAreaComID 
+  st_drop_geometry() #library(sf)
+FlowlineVAA1<-nhd_plus_load(vpu = 1, "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
+  dplyr::select(ComID, StreamOrde)  
+Flow1<-nhd_plus_load(vpu = 1, "NHDPlusAttributes", "PlusFlow") %>%  # to and from for the network 
+  dplyr::select(FROMCOMID, TOCOMID) 
+
+#2
+nhd_plus_get(vpu = 2, "NHDPlusAttributes")
+nhd_plus_get(vpu = 2, "NHDSnapshot")
+
+Flowlineinfo2<-nhd_plus_load(vpu = 2, "NHDSnapshot", "NHDFlowline") %>% 
+  dplyr::select(COMID, WBAREACOMI, FTYPE, FCODE, LENGTHKM) %>% # need the shape file for ComID, FCode, FType, and WBAreaComID 
+  st_drop_geometry() #library(sf)
+FlowlineVAA2<-nhd_plus_load(vpu = 2, "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
+  dplyr::select(ComID, StreamOrde) 
+Flow2<-nhd_plus_load(vpu = 2, "NHDPlusAttributes", "PlusFlow") %>% 
+  dplyr::select(FROMCOMID, TOCOMID) 
+
+#3
+nhd_plus_get(vpu = '03N', "NHDPlusAttributes")
+nhd_plus_get(vpu = '03N', "NHDSnapshot")
+
+Flowlineinfo3N<-nhd_plus_load(vpu = '03N', "NHDSnapshot", "NHDFlowline") %>% 
+  dplyr::select(COMID, WBAREACOMI, FTYPE, FCODE, LENGTHKM) %>% # need the shape file for ComID, FCode, FType, and WBAreaComID 
+  st_drop_geometry() #library(sf)
+FlowlineVAA3N<-nhd_plus_load(vpu = '03N', "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
+  dplyr::select(ComID, StreamOrde) 
+Flow3N<-nhd_plus_load(vpu = '03N', "NHDPlusAttributes", "PlusFlow") %>% 
+  dplyr::select(FROMCOMID, TOCOMID) 
+
+nhd_plus_get(vpu = '03S', "NHDPlusAttributes")
+nhd_plus_get(vpu = '03S', "NHDSnapshot")
+
+Flowlineinfo3S<-nhd_plus_load(vpu = '03S', "NHDSnapshot", "NHDFlowline") %>% 
+  dplyr::select(COMID, WBAREACOMI, FTYPE, FCODE, LENGTHKM) %>% # need the shape file for ComID, FCode, FType, and WBAreaComID 
+  st_drop_geometry() #library(sf)
+FlowlineVAA3S<-nhd_plus_load(vpu = '03S', "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
+  dplyr::select(ComID, StreamOrde) 
+Flow3S<-nhd_plus_load(vpu = '03S', "NHDPlusAttributes", "PlusFlow") %>% 
+  dplyr::select(FROMCOMID, TOCOMID) 
+
+nhd_plus_get(vpu = '03W', "NHDPlusAttributes")
+nhd_plus_get(vpu = '03W', "NHDSnapshot")
+
+Flowlineinfo3W<-nhd_plus_load(vpu = '03W', "NHDSnapshot", "NHDFlowline") %>% 
+  dplyr::select(COMID, WBAREACOMI, FTYPE, FCODE, LENGTHKM) %>% # need the shape file for ComID, FCode, FType, and WBAreaComID 
+  st_drop_geometry() #library(sf)
+FlowlineVAA3W<-nhd_plus_load(vpu = '03W', "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
+  dplyr::select(ComID, StreamOrde) 
+Flow3W<-nhd_plus_load(vpu = '03W', "NHDPlusAttributes", "PlusFlow") %>% 
+  dplyr::select(FROMCOMID, TOCOMID) 
+
+#4
+nhd_plus_get(vpu = 4, "NHDPlusAttributes")
+nhd_plus_get(vpu = 4, "NHDSnapshot")
+
+Flowlineinfo4<-nhd_plus_load(vpu = 4, "NHDSnapshot", "NHDFlowline") %>% 
+  dplyr::select(COMID, WBAREACOMI, FTYPE, FCODE, LENGTHKM) %>% # need the shape file for ComID, FCode, FType, and WBAreaComID 
+  st_drop_geometry() #library(sf)
+FlowlineVAA4<-nhd_plus_load(vpu = 4, "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
+  dplyr::select(ComID, StreamOrde) 
+Flow4<-nhd_plus_load(vpu = 4, "NHDPlusAttributes", "PlusFlow") %>% 
+  dplyr::select(FROMCOMID, TOCOMID) 
+
+#5
+nhd_plus_get(vpu = 5, "NHDPlusAttributes")
+nhd_plus_get(vpu = 5, "NHDSnapshot")
+
+Flowlineinfo5<-nhd_plus_load(vpu = 5, "NHDSnapshot", "NHDFlowline") %>% 
+  dplyr::select(COMID, WBAREACOMI, FTYPE, FCODE, LENGTHKM) %>% # need the shape file for ComID, FCode, FType, and WBAreaComID 
+  st_drop_geometry() #library(sf)
+FlowlineVAA5<-nhd_plus_load(vpu = 5, "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
+  dplyr::select(ComID, StreamOrde) 
+Flow5<-nhd_plus_load(vpu = 5, "NHDPlusAttributes", "PlusFlow") %>% 
+  dplyr::select(FROMCOMID, TOCOMID) 
+
+#6
+nhd_plus_get(vpu = 6, "NHDPlusAttributes")
+nhd_plus_get(vpu = 6, "NHDSnapshot")
+
+Flowlineinfo6<-nhd_plus_load(vpu = 6, "NHDSnapshot", "NHDFlowline") %>% 
+  dplyr::select(COMID, WBAREACOMI, FTYPE, FCODE, LENGTHKM) %>% # need the shape file for ComID, FCode, FType, and WBAreaComID 
+  st_drop_geometry() #library(sf)
+FlowlineVAA6<-nhd_plus_load(vpu = 6, "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
+  dplyr::select(ComID, StreamOrde) 
+Flow6<-nhd_plus_load(vpu = 6, "NHDPlusAttributes", "PlusFlow") %>% 
+  dplyr::select(FROMCOMID, TOCOMID) 
+
+#7
+nhd_plus_get(vpu = 7, "NHDPlusAttributes")
+nhd_plus_get(vpu = 7, "NHDSnapshot")
+
+Flowlineinfo7<-nhd_plus_load(vpu = 7, "NHDSnapshot", "NHDFlowline") %>% 
+  dplyr::select(COMID, WBAREACOMI, FTYPE, FCODE, LENGTHKM) %>% # need the shape file for ComID, FCode, FType, and WBAreaComID 
+  st_drop_geometry() #library(sf)
+FlowlineVAA7<-nhd_plus_load(vpu = 7, "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
+  dplyr::select(ComID, StreamOrde) 
+Flow7<-nhd_plus_load(vpu = 7, "NHDPlusAttributes", "PlusFlow") %>% 
+  dplyr::select(FROMCOMID, TOCOMID) 
+
+#8
+nhd_plus_get(vpu = 8, "NHDPlusAttributes")
+nhd_plus_get(vpu = 8, "NHDSnapshot")
+
+Flowlineinfo8<-nhd_plus_load(vpu = 8, "NHDSnapshot", "NHDFlowline") %>% 
+  dplyr::select(COMID, WBAREACOMI, FTYPE, FCODE, LENGTHKM) %>% # need the shape file for ComID, FCode, FType, and WBAreaComID 
+  st_drop_geometry() #library(sf)
+FlowlineVAA8<-nhd_plus_load(vpu = 8, "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
+  dplyr::select(ComID, StreamOrde) 
+Flow8<-nhd_plus_load(vpu = 8, "NHDPlusAttributes", "PlusFlow") %>% 
+  dplyr::select(FROMCOMID, TOCOMID) 
+
+#9
+nhd_plus_get(vpu = 9, "NHDPlusAttributes")
+nhd_plus_get(vpu = 9, "NHDSnapshot")
+
+Flowlineinfo9<-nhd_plus_load(vpu = 9, "NHDSnapshot", "NHDFlowline") %>% 
+  dplyr::select(COMID, WBAREACOMI, FTYPE, FCODE, LENGTHKM) %>% # need the shape file for ComID, FCode, FType, and WBAreaComID 
+  st_drop_geometry() #library(sf)
+FlowlineVAA9<-nhd_plus_load(vpu = 9, "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
+  dplyr::select(ComID, StreamOrde) 
+Flow9<-nhd_plus_load(vpu = 9, "NHDPlusAttributes", "PlusFlow") %>% 
+  dplyr::select(FROMCOMID, TOCOMID) 
+
+#"10L
+nhd_plus_get(vpu = "10L", "NHDPlusAttributes")
+nhd_plus_get(vpu = "10L", "NHDSnapshot")
+
+Flowlineinfo10L<-nhd_plus_load(vpu = "10L", "NHDSnapshot", "NHDFlowline") %>% 
+  dplyr::select(COMID, WBAREACOMI, FTYPE, FCODE, LENGTHKM) %>% # need the shape file for ComID, FCode, FType, and WBAreaComID 
+  st_drop_geometry() #library(sf)
+FlowlineVAA10L<-nhd_plus_load(vpu = "10L", "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
+  dplyr::select(ComID, StreamOrde) 
+Flow10L<-nhd_plus_load(vpu = "10L", "NHDPlusAttributes", "PlusFlow") %>% 
+  dplyr::select(FROMCOMID, TOCOMID) 
+
+#"10U"
+nhd_plus_get(vpu = "10U", "NHDPlusAttributes")
+nhd_plus_get(vpu = "10U", "NHDSnapshot")
+
+Flowlineinfo10U<-nhd_plus_load(vpu = "10U", "NHDSnapshot", "NHDFlowline") %>% 
+  dplyr::select(COMID, WBAREACOMI, FTYPE, FCODE, LENGTHKM) %>% # need the shape file for ComID, FCode, FType, and WBAreaComID 
+  st_drop_geometry() #library(sf)
+FlowlineVAA10U<-nhd_plus_load(vpu = "10U", "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
+  dplyr::select(ComID, StreamOrde) 
+Flow10U<-nhd_plus_load(vpu = "10U", "NHDPlusAttributes", "PlusFlow") %>% 
+  dplyr::select(FROMCOMID, TOCOMID) 
+
+#11
+nhd_plus_get(vpu = 11, "NHDPlusAttributes")
+nhd_plus_get(vpu = 11, "NHDSnapshot")
+
+Flowlineinfo11<-nhd_plus_load(vpu = 11, "NHDSnapshot", "NHDFlowline") %>% 
+  dplyr::select(COMID, WBAREACOMI, FTYPE, FCODE, LENGTHKM) %>% # need the shape file for ComID, FCode, FType, and WBAreaComID 
+  st_drop_geometry() #library(sf)
+FlowlineVAA11<-nhd_plus_load(vpu = 11, "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
+  dplyr::select(ComID, StreamOrde) 
+Flow11<-nhd_plus_load(vpu = 11, "NHDPlusAttributes", "PlusFlow") %>% 
+  dplyr::select(FROMCOMID, TOCOMID) 
+
+#12
+nhd_plus_get(vpu = 12, "NHDPlusAttributes")
+nhd_plus_get(vpu = 12, "NHDSnapshot")
+
+Flowlineinfo12<-nhd_plus_load(vpu = 12, "NHDSnapshot", "NHDFlowline") %>% 
+  dplyr::select(COMID, WBAREACOMI, FTYPE, FCODE, LENGTHKM) %>% # need the shape file for ComID, FCode, FType, and WBAreaComID 
+  st_drop_geometry() #library(sf)
+FlowlineVAA12<-nhd_plus_load(vpu = 12, "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
+  dplyr::select(ComID, StreamOrde) 
+Flow12<-nhd_plus_load(vpu = 12, "NHDPlusAttributes", "PlusFlow") %>% 
+  dplyr::select(FROMCOMID, TOCOMID) 
+
+#13
+nhd_plus_get(vpu = 13, "NHDPlusAttributes")
+nhd_plus_get(vpu = 13, "NHDSnapshot")
+
+Flowlineinfo13<-nhd_plus_load(vpu = 13, "NHDSnapshot", "NHDFlowline") %>% 
+  dplyr::select(ComID, WBAreaComI, FTYPE, FCode, LengthKM) %>% # need the shape file for ComID, FCode, FType, and WBAreaComID 
+  st_drop_geometry() #library(sf)
+FlowlineVAA13<-nhd_plus_load(vpu = 13, "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
+  dplyr::select(ComID, StreamOrde) 
+Flow13<-nhd_plus_load(vpu = 13, "NHDPlusAttributes", "PlusFlow") %>% 
+  dplyr::select(FROMCOMID, TOCOMID) 
+
+#14
+nhd_plus_get(vpu = 14, "NHDPlusAttributes")
+nhd_plus_get(vpu = 14, "NHDSnapshot")
+
+Flowlineinfo14<-nhd_plus_load(vpu = 14, "NHDSnapshot", "NHDFlowline") %>% 
+  dplyr::select(ComID, WBAreaComI, FTYPE, FCode, LengthKM) %>% # need the shape file for ComID, FCode, FType, and WBAreaComID 
+  st_drop_geometry() #library(sf)
+FlowlineVAA14<-nhd_plus_load(vpu = 14, "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
+  dplyr::select(ComID, StreamOrde) 
+Flow14<-nhd_plus_load(vpu = 14, "NHDPlusAttributes", "PlusFlow") %>% 
+  dplyr::select(FROMCOMID, TOCOMID) 
+
+#15
+nhd_plus_get(vpu = 15, "NHDPlusAttributes")
+nhd_plus_get(vpu = 15, "NHDSnapshot")
+
+Flowlineinfo15<-nhd_plus_load(vpu =15, "NHDSnapshot", "NHDFlowline") %>% 
+  dplyr::select(ComID, WBAreaComI, FTYPE, FCode, LengthKM) %>% # need the shape file for ComID, FCode, FType, and WBAreaComID 
+  st_drop_geometry() #library(sf)
+FlowlineVAA15<-nhd_plus_load(vpu = 15, "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
+  dplyr::select(ComID, StreamOrde) 
+Flow15<-nhd_plus_load(vpu = 15, "NHDPlusAttributes", "PlusFlow") %>% 
+  dplyr::select(FROMCOMID, TOCOMID) 
+
+#16
+nhd_plus_get(vpu = 16, "NHDPlusAttributes")
+nhd_plus_get(vpu = 16, "NHDSnapshot")
+
+Flowlineinfo16<-nhd_plus_load(vpu = 16, "NHDSnapshot", "NHDFlowline") %>% 
+  dplyr::select(ComID, WBAreaComI, FTYPE, FCode, LengthKM) %>% # need the shape file for ComID, FCode, FType, and WBAreaComID 
+  st_drop_geometry() #library(sf)
+FlowlineVAA16<-nhd_plus_load(vpu = 16, "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
+  dplyr::select(ComID, StreamOrde) 
+Flow16<-nhd_plus_load(vpu = 16, "NHDPlusAttributes", "PlusFlow") %>% 
+  dplyr::select(FROMCOMID, TOCOMID) 
+
+#17
+nhd_plus_get(vpu = 17, "NHDPlusAttributes")
+nhd_plus_get(vpu = 17, "NHDSnapshot")
+
+Flowlineinfo17<-nhd_plus_load(vpu = 17, "NHDSnapshot", "NHDFlowline") %>% 
+  dplyr::select(COMID, WBAREACOMI, FTYPE, FCODE, LENGTHKM) %>% # need the shape file for ComID, FCode, FType, and WBAreaComID 
+  st_drop_geometry() #library(sf)
+FlowlineVAA17<-nhd_plus_load(vpu = 17, "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
+  dplyr::select(ComID, StreamOrde) 
+Flow17<-nhd_plus_load(vpu = 17, "NHDPlusAttributes", "PlusFlow") %>% 
+  dplyr::select(FROMCOMID, TOCOMID) 
+
+#18
+nhd_plus_get(vpu = 18, "NHDPlusAttributes")
+nhd_plus_get(vpu = 18, "NHDSnapshot")
+
+Flowlineinfo18<-nhd_plus_load(vpu = 18, "NHDSnapshot", "NHDFlowline") %>% 
+  dplyr::select(COMID, WBAREACOMI, FTYPE, FCODE, LENGTHKM) %>% # need the shape file for ComID, FCode, FType, and WBAreaComID 
+  st_drop_geometry() #library(sf)
+FlowlineVAA18<-nhd_plus_load(vpu = 18, "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
+  dplyr::select(ComID, StreamOrde) 
+Flow18<-nhd_plus_load(vpu = 18, "NHDPlusAttributes", "PlusFlow") %>% 
+  dplyr::select(FROMCOMID, TOCOMID) 
+
+write.csv(Flowlineinfo1, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo1.csv", row.names = FALSE)
+write.csv(FlowlineVAA1, "/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA1.csv", row.names = FALSE)
+write.csv(Flow1, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flow1.csv", row.names = FALSE)
+
+write.csv(Flowlineinfo2, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo2.csv", row.names = FALSE)
+write.csv(FlowlineVAA2, "/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA2.csv", row.names = FALSE)
+write.csv(Flow2, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flow2.csv", row.names = FALSE)
+
+write.csv(Flowlineinfo3N, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo3N.csv", row.names = FALSE)
+write.csv(FlowlineVAA3N, "/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA3N.csv", row.names = FALSE)
+write.csv(Flow3N, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flow3N.csv", row.names = FALSE)
+
+write.csv(Flowlineinfo3S, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo3S.csv", row.names = FALSE)
+write.csv(FlowlineVAA3S, "/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA3S.csv", row.names = FALSE)
+write.csv(Flow3S, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flow3S.csv", row.names = FALSE)
+
+write.csv(Flowlineinfo3W, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo3W.csv", row.names = FALSE)
+write.csv(FlowlineVAA3W, "/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA3W.csv", row.names = FALSE)
+write.csv(Flow3W, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flow3W.csv", row.names = FALSE)
+
+write.csv(Flowlineinfo4, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo4.csv", row.names = FALSE)
+write.csv(FlowlineVAA4, "/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA4.csv", row.names = FALSE)
+write.csv(Flow4, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flow4.csv", row.names = FALSE)
+
+write.csv(Flowlineinfo5, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo5.csv", row.names = FALSE)
+write.csv(FlowlineVAA5, "/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA5.csv", row.names = FALSE)
+write.csv(Flow5, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flow5.csv", row.names = FALSE)
+
+write.csv(Flowlineinfo6, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo6.csv", row.names = FALSE)
+write.csv(FlowlineVAA6, "/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA6.csv", row.names = FALSE)
+write.csv(Flow6, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flow6.csv", row.names = FALSE)
+
+write.csv(Flowlineinfo7, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo7.csv", row.names = FALSE)
+write.csv(FlowlineVAA7, "/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA7.csv", row.names = FALSE)
+write.csv(Flow7, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flow7.csv", row.names = FALSE)
+
+write.csv(Flowlineinfo8, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo8.csv", row.names = FALSE)
+write.csv(FlowlineVAA8, "/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA8.csv", row.names = FALSE)
+write.csv(Flow8, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flow8.csv", row.names = FALSE)
+
+write.csv(Flowlineinfo9, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo9.csv", row.names = FALSE)
+write.csv(FlowlineVAA9, "/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA9.csv", row.names = FALSE)
+write.csv(Flow9, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flow9.csv", row.names = FALSE)
+
+write.csv(Flowlineinfo10U, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo10U.csv", row.names = FALSE)
+write.csv(FlowlineVAA10U, "/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA10U.csv", row.names = FALSE)
+write.csv(Flow10U, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flow10U.csv", row.names = FALSE)
+
+write.csv(Flowlineinfo10L, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo10L.csv", row.names = FALSE)
+write.csv(FlowlineVAA10L, "/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA10L.csv", row.names = FALSE)
+write.csv(Flow10L, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flow10L.csv", row.names = FALSE)
+
+write.csv(Flowlineinfo11, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo11.csv", row.names = FALSE)
+write.csv(FlowlineVAA11, "/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA11.csv", row.names = FALSE)
+write.csv(Flow11, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flow11.csv", row.names = FALSE)
+
+write.csv(Flowlineinfo12, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo12.csv", row.names = FALSE)
+write.csv(FlowlineVAA12, "/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA12.csv", row.names = FALSE)
+write.csv(Flow12, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flow12.csv", row.names = FALSE)
+
+write.csv(Flowlineinfo13, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo13.csv", row.names = FALSE)
+write.csv(FlowlineVAA13, "/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA13.csv", row.names = FALSE)
+write.csv(Flow13, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flow13.csv", row.names = FALSE)
+
+write.csv(Flowlineinfo14, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo14.csv", row.names = FALSE)
+write.csv(FlowlineVAA14, "/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA14.csv", row.names = FALSE)
+write.csv(Flow14, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flow14.csv", row.names = FALSE)
+
+write.csv(Flowlineinfo15, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo15.csv", row.names = FALSE)
+write.csv(FlowlineVAA15, "/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA15.csv", row.names = FALSE)
+write.csv(Flow15, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flow15.csv", row.names = FALSE)
+
+write.csv(Flowlineinfo16, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo16.csv", row.names = FALSE)
+write.csv(FlowlineVAA16, "/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA16.csv", row.names = FALSE)
+write.csv(Flow16, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flow16.csv", row.names = FALSE)
+
+write.csv(Flowlineinfo17, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo17.csv", row.names = FALSE)
+write.csv(FlowlineVAA17, "/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA17.csv", row.names = FALSE)
+write.csv(Flow17, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flow17.csv", row.names = FALSE)
+
+write.csv(Flowlineinfo18, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo18.csv", row.names = FALSE)
+write.csv(FlowlineVAA18, "/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA18.csv", row.names = FALSE)
+write.csv(Flow18, "/Users/katelynking/Desktop/NHDmed_flowlines_all/Flow18.csv", row.names = FALSE)
