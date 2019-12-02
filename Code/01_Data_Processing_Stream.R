@@ -1,10 +1,11 @@
 #### Fish diversity across lakes and streams at the regional scale
 ## Written by Katelyn King Oct 15, 2018
-## Updated: Aug 2019
+## Updated: Nov 2019
 
 #load libraries
 library(rgdal)
 library(sp)
+library(sf)
 library(dplyr)
 library(raster)
 
@@ -97,6 +98,7 @@ stream_names<-stream_iNEXT[!duplicated(paste(stream_iNEXT$COMIDv2_JR)),] # 1572 
 stream_diversity_output <-data.frame(matrix(NA, nrow = length(stream_names$COMIDv2_JR), ncol = 3))
 stream_diversity_output[,1] = stream_names$COMIDv2_JR #put all the names in the first column
 colnames(stream_diversity_output) <- c("COMIDv2_JR","exp_rich", "shannon")
+
 for (i in 1:ncol(new)) {  #this runs all columns 
   out <- iNEXT(new[,i], q=0, datatype="abundance")    
   expected <-out$AsyEst[1,2]   #### select the species richness estimate 
@@ -105,7 +107,7 @@ for (i in 1:ncol(new)) {  #this runs all columns
   stream_diversity_output[i,3]<-shannon # put shannon value in the table 
 }
 
-## save clean datasets with necessary columns
+##clean datasets with necessary columns
 stream_data_QAQC<-dplyr::select(stream_d2, lat, lon, samp_year, COMIDv2_JR, ind_count, common_name, scientific_name, STATE_AB, SPP_CODE_new, obs_spec, slope) %>%
                           left_join(stream_diversity_output)
 
@@ -113,7 +115,7 @@ stream_data_QAQC<-dplyr::select(stream_d2, lat, lon, samp_year, COMIDv2_JR, ind_
 uniq_reaches<-stream_d2[!duplicated(paste(stream_d2$COMIDv2_JR)),] 
 summary(uniq_reaches$STATE_AB)
 
-#------ Step 3: join data with HUCs and LAGOS -------
+#------ Step 3: join data with NHD info, HUCs, and LAGOS -------
 stream_dat<-stream_data_QAQC
 
 streampoints<-dplyr::select(stream_dat, COMIDv2_JR, lat, lon)
@@ -167,48 +169,65 @@ data.table::setnames(streamsall, old=c("ZoneID.x","ZoneID.y", 'ZoneID'), new=c("
 write.csv(streamsall, "Datasets/stream_data_QAQC.csv", row.names = FALSE)
 
 #merge with Stream Order info! 
+streamsall<-read.csv("Datasets/stream_data_QAQC.csv")
 stream_uniq<-streamsall[!duplicated(paste(streamsall$COMIDv2_JR)),] #1571 
-summary(stream_uniq$HUC4)
-H401<-read.csv("/Users/katelynking/Desktop/NHDmed_streams/H401.csv")
-H402<-read.csv("/Users/katelynking/Desktop/NHDmed_streams/H402.csv")
-H403<-read.csv("/Users/katelynking/Desktop/NHDmed_streams/H403.csv")
-H404<-read.csv("/Users/katelynking/Desktop/NHDmed_streams/H404.csv")
-H405<-read.csv("/Users/katelynking/Desktop/NHDmed_streams/H405.csv")
-H406<-read.csv("/Users/katelynking/Desktop/NHDmed_streams/H406.csv")
-H407<-read.csv("/Users/katelynking/Desktop/NHDmed_streams/H407.csv")
-H408<-read.csv("/Users/katelynking/Desktop/NHDmed_streams/H408.csv")
-H409<-read.csv("/Users/katelynking/Desktop/NHDmed_streams/H409.csv")
-H410<-read.csv("/Users/katelynking/Desktop/NHDmed_streams/H410.csv")
 
-### Use Joe's package for the rest of the NHDPlus data 
+### Use Joe's package for the NHDPlus data 
 # install.packages("devtools")
 devtools::install_github("jsta/nhdR")
 library(nhdR)
-## need VPUs (Vector Processing Units) 04, 08, 18, part of 13?? 
+## need VPUs (Vector Processing Units) 1, 4, 7, 10 
 # get a vpu export 04
 nhd_plus_get(vpu = 1, "NHDPlusAttributes")
+nhd_plus_get(vpu = 1, "NHDSnapshot") ## snapshot has area data
+nhd_plus_list(vpu = 1, "NHDSnapshot")
 nhd_plus_list(vpu = 1, "NHDPlusAttributes")
 st_order01<-nhd_plus_load(vpu = 1, "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
   dplyr::select(ComID, StreamOrde) #has stream order
+st_area01<-nhd_plus_load(vpu = 1, "NHDSnapshot", "NHDArea") %>% 
+  dplyr::select(COMID, AREASQKM, FTYPE, SHAPE_LENG)  %>%  #stream area
+  st_drop_geometry() #library(sf)
+
+nhd_plus_get(vpu = 4, "NHDPlusAttributes")
+nhd_plus_get(vpu = 4, "NHDSnapshot")
+st_order04<-nhd_plus_load(vpu = 4, "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
+  dplyr::select(ComID, StreamOrde) #has stream order
+st_area04<-nhd_plus_load(vpu = 4, "NHDSnapshot", "NHDArea") %>% 
+  dplyr::select(COMID, AREASQKM)  %>%  #stream area
+  st_drop_geometry() #library(sf)
 
 nhd_plus_get(vpu = 7, "NHDPlusAttributes")
+nhd_plus_get(vpu = 7, "NHDSnapshot")
 st_order07<-nhd_plus_load(vpu = 7, "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
   dplyr::select(ComID, StreamOrde) #has stream order
+st_area07<-nhd_plus_load(vpu = 7, "NHDSnapshot", "NHDArea") %>% 
+  dplyr::select(COMID, AREASQKM)  %>%  #stream area
+  st_drop_geometry() #library(sf)
 
 nhd_plus_get(vpu = '10U', "NHDPlusAttributes")
+nhd_plus_get(vpu = '10U', "NHDSnapshot")
 st_order10U<-nhd_plus_load('10U', "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
   dplyr::select(ComID, StreamOrde) #has stream order
+st_area10U<-nhd_plus_load(vpu = '10U', "NHDSnapshot", "NHDArea") %>% 
+  dplyr::select(COMID, AREASQKM)  %>%  #stream area
+  st_drop_geometry() #library(sf)
 
 nhd_plus_get(vpu = '10L', "NHDPlusAttributes")
+nhd_plus_get(vpu = '10L', "NHDSnapshot")
 st_order10L<-nhd_plus_load(vpu = '10L', "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
   dplyr::select(ComID, StreamOrde) #has stream order
+st_area10L<-nhd_plus_load(vpu = '10L', "NHDSnapshot", "NHDArea") %>% 
+  dplyr::select(COMID, AREASQKM)  %>%  #stream area
+  st_drop_geometry() #library(sf)
 
-#combine all of the HUCS
-HUC_flows_m<-gtools::smartbind(H401, H402, H403, H404,H405, H406, H407,H408, H409, H410) %>%
-  dplyr::select(ComID, StreamOrde)
-HUC_flows_2<-gtools::smartbind(st_order01, st_order07, st_order10U, st_order10L, HUC_flows_m) 
+#combine all order data of the HUCS
+HUC_order<-gtools::smartbind(st_order01, st_order04, st_order07, st_order10U, st_order10L) 
 
-stream_order<-left_join(stream_uniq, HUC_flows_2, by = c("COMIDv2_JR" = "ComID") ) 
+#combine all area data of the HUCS
+#HUC_area<-gtools::smartbind(st_area01, st_area04, st_area07, st_area10U, st_area10L) 
+
+stream_order<-left_join(stream_uniq, HUC_order, by = c("COMIDv2_JR" = "ComID") ) %>%
+                left_join(HUC_area, by = c("COMIDv2_JR" = "COMID"))
 
 stream_order_info<-stream_order[!duplicated(paste(stream_order$COMIDv2_JR)),] %>%
   dplyr::select(COMIDv2_JR, lat, lon, samp_year, STATE_AB, obs_spec, HU4_ZoneID, HU8_ZoneID, HU12_ZoneID, exp_rich, StreamOrde)
@@ -234,41 +253,48 @@ stream_order_info$order_class<-sapply(stream_order_info$StreamOrde, function(x) 
 
 barchart(stream_order_info$order_class)
 summary(as.factor(stream_order_info$order_class))
-write.csv(stream_order_info, 'Datasets/stream_reach_info.csv', row.names = FALSE )
 
 
-#------ Step 4: spatial autocorrelation (sub-setting independent streams) -------
-library(gstat)
+#add in stream area 
+stream_dim<-dplyr::select(stream_data, COMIDv2_JR, samp_length, width)
+stream_dim<-stream_dim[!duplicated(paste(stream_dim$COMIDv2_JR)),]
+stream_area<-inner_join(stream_order_info, stream_dim)
 
-summary(stream_uniq$STATE_AB)
-IA<-filter(stream_uniq, STATE_AB == 'IA')
-coords <- coordinatize(IA, latname="lat", longname = "lon")
-library(mapview)
-mapview(coords) 
+#get more widths with google maps ## read in document that was manually filled in with stream widths (m)
+stream_width<-read.csv("/Users/katelynking/Desktop/Chap 2 Fish/stream_width.csv", header = TRUE) %>%
+  dplyr::select(COMIDv2_JR, width)
 
-library(hydrolinks)
-#set a path for data from hydrolinks package 
-cache_set_dir(path = 'Data/')
-#get shapefiles from nhd high-res by using the permanent identifiers from LAGOS #lost one lake  
-IA_streams = get_shape_by_id(IA$COMIDv2_JR, dataset = 'nhdplusv2', feature_type = 'flowline')
-mapview(coords)  + mapview(IA_streams)
+stream_widthnew<-left_join(stream_area, stream_width, by="COMIDv2_JR")
+stream_widthnew$width<-ifelse(is.na(stream_widthnew$width.x), stream_widthnew$width.y, stream_widthnew$width.x) #if the first width is na, then fill in with manual width, else use the first width
+stream_widthnew$area<-(stream_widthnew$samp_length*.001)*(stream_widthnew$width*.001) #convert to km and then multiply
 
-#semivariograms - this doesnt make sense here 
-hist(stream_uniq$obs_spec)
-stream_uniq$logobs<-log(stream_uniq$obs_spec)
-hist(stream_uniq$logobs)
-prj.new<-CRS("+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=km +ellps=GRS80")
-stream.ll<-SpatialPointsDataFrame(coords=stream_uniq[,c("lon","lat")], data=stream_uniq,
-                                  proj4string=CRS("+proj=longlat +datum=NAD83 +ellps=GRS80")) 
-stream.aea <- spTransform(stream.ll, prj.new)
+write.csv(stream_widthnew, 'Datasets/stream_reach_info.csv', row.names = FALSE )
 
-#stream
-stream.v <- variogram(logobs~1, stream.aea, cutoff=1000, width=20)  
-min(stream.v$np)
-stream.fit <- fit.variogram(stream.v, vgm("Sph", "Exp"))
-stream.fit
-plot(variogramLine(stream.fit, 2500), type='l') 
-points(stream.v[,2:3], pch=21, bg='blue', col="black")
-### Range is 109 km 
+#------ Step 4: sub-setting independent streams -------
+stream_order_info<-read.csv('Datasets/stream_reach_info.csv')
+#pull out the stream with the most observations of species from HUC 12s so that I don't have streams from the same watershed 
+streams_subset<-do.call(rbind, lapply(split(stream_order_info, stream_order_info$HU12_ZoneID), function(x) {return(x[which.max(x$obs_spec),])}))
+
+#random stratified by HUC12; pull one stream reach from each HUC12
+#set.seed(1)
+#out2 <- as.data.frame(stream_order_info %>%
+ #group_by(HU12_ZoneID) %>%
+    #sample_n(1))
+
+summary(as.factor(streams_subset$order_class))
+
+#subsample headwater streams from WI and ME
+#MI_IA_NH<-filter(out2, STATE_AB =="MI" | STATE_AB =="IA" | STATE_AB =="NH") #keep other states' datasets 
+#ME_WI<-filter(out2, STATE_AB =="ME" | STATE_AB =="WI")
+#ME_WI_HW<-filter(ME_WI, order_class == "HW") #pull out headwater 
+#ME_WI_MR<-filter(ME_WI, order_class == "MID" | order_class == "RIVER") #keep mid and rivers 
+
+#set.seed(1)
+#out3 <- as.data.frame(ME_WI_HW %>%
+#  group_by(STATE_AB) %>%
+#  sample_n(30))
+
+#streams_subset<-gtools::smartbind(MI_IA_NH, ME_WI_MR, out3)
+#summary(as.factor(streams_subset$order_class))
 
 
