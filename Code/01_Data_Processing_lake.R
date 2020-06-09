@@ -32,13 +32,13 @@ names(WI_info2)[2]<-"LONG_DD"
 MIsp<-MIdata[!duplicated(paste(MIdata$SPP_CODE)),] %>% 
         dplyr::select(SPP_CODE)
 
-#get rid of hybrid and unknown species; # Splake is a hybrid; smelt is not to the species level. 
+#get rid of hybrid and unknown species; # Splake is a hybrid; smelt and mudminnow are not to the species level. 
 
 MI_d<-filter(MIdata, !(SPP_CODE == "hybrid_sunfish" | SPP_CODE == "musky_hybrid" | 
                             SPP_CODE == "uknown_minnow" | SPP_CODE == "uknown_sucker" |
                             SPP_CODE == "unknown_bullhead" | SPP_CODE == "unknown_killifish" |
                             SPP_CODE == "unknown_redhorse" | SPP_CODE == "unknown_sculpin" | 
-                         SPP_CODE == "smelt" | SPP_CODE == "splake" ))
+                         SPP_CODE == "smelt" | SPP_CODE == "splake" |  SPP_CODE == "mudminnow"))
 
 #clean up species names across states 
 MI_d$SPP_CODE_CAP<-casefold(MI_d$SPP_CODE, upper = TRUE) #make them all cap
@@ -47,9 +47,10 @@ MI_d$SPP_CODE_n<-gsub(" ", "_", MI_d$SPP_CODE_CAP, fixed=TRUE) #add a dash where
 MI_d <- MI_d %>%
   mutate(SPP_CODE_new = case_when(SPP_CODE_n == 'NORTHERN_HOGSUCKER' ~ 'NORTHERN_HOG_SUCKER',   #if ~ then 
                           SPP_CODE_n == 'ROCKBASS' ~ 'ROCK_BASS',
+                          SPP_CODE_n == 'MUSKY' ~ 'MUSKELLUNGE',
                           TRUE ~ MI_d$SPP_CODE_n))  ### the else part 
 
-MIsp<-lakes.df[!duplicated(paste(lakes.df$SPP_CODE_new)),] # 78 unique species 
+MIsp<-MI_d [!duplicated(paste(MI_d $SPP_CODE_new)),] # 77 unique species 
 
 ### ### ### ### ### ### ### ### 
 ### clean up WI data set ###
@@ -63,6 +64,7 @@ names(WIyear2)[8]<-"Sum_Fish_Count"
 #join the two tables
 WIdata<-gtools::smartbind(WIyear1, WIyear2)
 WIlakes<-WIdata[!duplicated(paste(WIdata$LAKE_CODE)),] # 468 lakes  
+WIsp<-WIdata[!duplicated(paste(WIdata$SPP_CODE)),] 
 
 # remove hybrid species and unknown species 
 WI_d<-filter(WIdata, !(SPP_CODE == "BLUEGILL_X_UNKNOWN"  | SPP_CODE == "GREEN_SUNFISH_X_BLUEGILL" | SPP_CODE == "GREEN_SUNFISH_X_BLUEGILL_X_PUMPKINSEED" |
@@ -92,6 +94,7 @@ WIsp<-WI_d[!duplicated(paste(WI_d$SPP_CODE_new)),] # 96 unique species
 ### ### ### ### ### ### ### ### ### 
 ### clean up Iowa data set ### 
 IAlakes<-IAdata[!duplicated(paste(IAdata$LAKE_CODE)),] # 127 unique lakes
+IAsp<-IAdata[!duplicated(paste(IAdata$FISH_NAME)),] #investigate unique species
 
 #get rid of hybrid and unknown species 
 IA_d<-filter(IAdata, !(FISH_NAME == "Buffalo_Mixed_Species" | FISH_NAME == "Bullhead_Mixed_Species" |FISH_NAME == "Crappie_Mixed_Species" |
@@ -114,6 +117,8 @@ IAsp<-IA_d[!duplicated(paste(IA_d$FISH_NAME)),] # 38 unique species
 
 ### ### ### ### ### ### ### ### 
 ### clean up NH/ME data set ### 
+NHMEsp<-NHMEdata[!duplicated(paste(NHMEdata$NAME_COM)),] 
+
 # remove other taxa (turtles, frogs, etc.), hybrid species, and unknown species  
 NHME_d<-filter(NHMEdata, !(FISHCODE == "OTHER"  | FISHCODE == "OTHER1" | FISHCODE == "OTHER2" |
                                     FISHCODE == "OTHER3" | FISHCODE == "OTHER4" | FISHCODE == "OTHER5"| 
@@ -135,7 +140,7 @@ NHME_d$TOTAL_COUNT<- NHME_d$ADULT + NHME_d$JUV + NHME_d$YOY
 NHME_d$SPP_CODE_CAP<-casefold(NHME_d$NAME_COM, upper = TRUE) #make them all cap
 NHME_d$SPP_CODE_n<-gsub(" ", "_", NHME_d$SPP_CODE_CAP, fixed=TRUE) #add a dash where there is a space
 NHMEsp<-NHME_d[!duplicated(paste(NHME_d$SPP_CODE_n)),] %>%
-  dplyr::select(SPP_CODE_n)# 38 unique species
+  dplyr::select(SPP_CODE_n)# 50 unique species
 
 NHME_d <- NHME_d %>%
   mutate(SPP_CODE_new = case_when(SPP_CODE_n == 'REDBREASTED_SUNFISH'~ 'REDBREAST_SUNFISH',   #if ~ then 
@@ -533,7 +538,7 @@ NHMEdata_iNEXT<-dplyr::select(NHME_d2, LAKE_ID, SPP_CODE_new, TOTAL_COUNT) %>%
   group_by(LAKE_ID, SPP_CODE_new) %>% summarise(total=sum(TOTAL_COUNT)) #group by lake and sp to add up all the sp for a lake 
 
 #change the data format so that all of the lakes are columns and species are rows. This is the iNEXT format needed.
-newform<-tidyr::spread(NHMEdata_iNEXT, LAKE_ID, total) #79 lakes left and 48 species
+newform<-tidyr::spread(NHMEdata_iNEXT, LAKE_ID, total) 
 
 #NAs to 0 
 newform[is.na(newform)] <- 0 
@@ -573,8 +578,8 @@ ME_d<-filter(NHME_diversity_output, grepl("ME", LAKE_CODE, fixed = TRUE)) #54 la
 # Read SHAPEFILE.shp from the LAGOS database 
 lakes_shape<- readOGR(dsn = "/Users/katelynking/Desktop/LAGOS_NE_All_Lakes_4ha", layer = "LAGOS_NE_All_Lakes_4ha")
 crs(lakes_shape) #shows me the projection of the shapefiles so that I can project the same to the points 
-prjnew <- CRS("+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0
-+units=m +no_defs")
+prjnew <- CRS('+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m
+              +no_defs +ellps=GRS80 +towgs84=0,0,0')
 
 #project data 
 IA<-read.csv('Datasets/IA_data_QAQC.csv')
@@ -721,13 +726,13 @@ lakesall<-gtools::smartbind(MI_com, IA_com, WI_com, NHME_com)
 lakesall<-lakesall[!(is.na(lakesall$lagoslakeid)),]  # remove lakes that did not match to LAGOS 
 lakecount<-lakesall[!duplicated(paste(lakesall$lagoslakeid)),] #588 lakes remaining 
 allsp<-lakesall[!duplicated(paste(lakesall$SPP_CODE_new)),] %>%
-        dplyr::select(SPP_CODE_new) #123
+        dplyr::select(SPP_CODE_new) #121
 
 data.table::setnames(lakesall, old=c("HU12_ZoneI"), new=c("HU12_ZoneID"))
 
 # Add connectivity class from LAGOS 
 library(LAGOSNE)
-lg <- lagosne_load("1.087.1") 
+lg <- lagosne_load("1.087.3") 
 lake_conn <- lg$lakes.geo
 lake_conn <- data.frame(lagoslakeid=lake_conn$lagoslakeid,
                         conn_class=lake_conn$lakeconnection)
@@ -735,7 +740,8 @@ lake_conn <- data.frame(lagoslakeid=lake_conn$lagoslakeid,
 lakesall<-left_join(lakesall, lake_conn)
 write.csv(lakesall, ("Datasets/lakesall.csv"), row.names = FALSE)
 
-### from the DR_LKST category select lake with the most species in a HUC12; would assume the other lake in the huc12 are a subset
+#### lake subset #### 
+# from the DR_LKST category select lake with the most species in a HUC12; would assume the other lake in the huc12 are a subset
 lakesall<-read.csv("Datasets/lakesall.csv")
 lakes_to_subsest<-lakesall[!duplicated(paste(lakesall$LAKE_ID)),] %>%
   dplyr::select(LAKE_ID, obs_spec, HU12_ZoneID, conn_class, lagoslakeid)
@@ -747,3 +753,4 @@ DRlakes_sub<-do.call(rbind, lapply(split(DR_lakeST, DR_lakeST$HU12_ZoneID), func
 
 lakes_subset<-gtools::smartbind(DRlakes_sub, other_lakes)
 summary(as.factor(lakes_subset$conn_class))
+

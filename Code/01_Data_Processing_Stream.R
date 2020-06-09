@@ -35,6 +35,7 @@ stream_d<-gtools::smartbind(MI_d, WI_d, IA_d, ME_d, NH_d)
 stream_d$SPP_CODE_CAP<-casefold(stream_d$common_name, upper = TRUE) #make them all cap
 stream_d$SPP_CODE_n<-gsub(" ", "_", stream_d$SPP_CODE_CAP, fixed=TRUE) #add a dash where there is a space
 stream_d$SPP_CODE_new<- ifelse(stream_d$SPP_CODE_n == 'TROUT-PERCH', 'TROUT_PERCH', stream_d$SPP_CODE_n) 
+stream_d$SPP_CODE_new<- ifelse(stream_d$SPP_CODE_n == 'HORNEYHEAD_CHUB', 'HORNYHEAD_CHUB', stream_d$SPP_CODE_n) 
 
 allsp<-stream_d[!duplicated(paste(stream_d$SPP_CODE_new)),] #155 
 
@@ -108,7 +109,7 @@ for (i in 1:ncol(new)) {  #this runs all columns
 }
 
 ##clean datasets with necessary columns
-stream_data_QAQC<-dplyr::select(stream_d2, lat, lon, samp_year, COMIDv2_JR, ind_count, common_name, scientific_name, STATE_AB, SPP_CODE_new, obs_spec, slope) %>%
+stream_data_QAQC<-dplyr::select(stream_d2, COMIDv2_JR, lat, lon, samp_year, samp_length, width, common_name, scientific_name, ind_count, STATE_AB, SPP_CODE_new, obs_spec, slope) %>%
                           left_join(stream_diversity_output)
 
 #state summary
@@ -164,28 +165,24 @@ stream.merge.HU4<-dplyr::left_join(stream_dat, streams.matchHU4) %>%
  
 
 streamsall<-stream.merge.HU4[!(is.na(stream.merge.HU4$ZoneID)),]  # remove streams that did not match to HU4 (only 3!) 
-data.table::setnames(streamsall, old=c("ZoneID.x","ZoneID.y", 'ZoneID'), new=c("HU4_ZoneID", "HU8_ZoneID", "HU12_ZoneID"))
-
-write.csv(streamsall, "Datasets/stream_data_QAQC.csv", row.names = FALSE)
+data.table::setnames(streamsall, old=c("lat", "lon", "STATE_AB", "ZoneID.x","ZoneID.y", 'ZoneID'), new=c("LAT_DD", "LON_DD", "STATE", "HU4_ZoneID", "HU8_ZoneID", "HU12_ZoneID"))
 
 #merge with Stream Order info! 
-streamsall<-read.csv("Datasets/stream_data_QAQC.csv")
-stream_uniq<-streamsall[!duplicated(paste(streamsall$COMIDv2_JR)),] #1571 
 
 ### Use Joe's package for the NHDPlus data 
 # install.packages("devtools")
 devtools::install_github("jsta/nhdR")
 library(nhdR)
 ## need VPUs (Vector Processing Units) 1, 4, 7, 10 
-# get a vpu export 04
+# get a vpu export
 nhd_plus_get(vpu = 1, "NHDPlusAttributes")
 nhd_plus_get(vpu = 1, "NHDSnapshot") ## snapshot has area data
 nhd_plus_list(vpu = 1, "NHDSnapshot")
 nhd_plus_list(vpu = 1, "NHDPlusAttributes")
 st_order01<-nhd_plus_load(vpu = 1, "NHDPlusAttributes", "PlusFlowlineVAA") %>% 
   dplyr::select(ComID, StreamOrde) #has stream order
-st_area01<-nhd_plus_load(vpu = 1, "NHDSnapshot", "NHDArea") %>% 
-  dplyr::select(COMID, AREASQKM, FTYPE, SHAPE_LENG)  %>%  #stream area
+st_area01<-nhd_plus_load(vpu = 1, "NHDSnapshot", "NHDFlowline") %>% 
+  dplyr::select(COMID, LENGTHKM)  %>%  #reach length 
   st_drop_geometry() #library(sf)
 
 nhd_plus_get(vpu = 4, "NHDPlusAttributes")
@@ -220,29 +217,56 @@ st_area10L<-nhd_plus_load(vpu = '10L', "NHDSnapshot", "NHDArea") %>%
   dplyr::select(COMID, AREASQKM)  %>%  #stream area
   st_drop_geometry() #library(sf)
 
+#read in saved csv files 
+st_order01<-read.csv("/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA1.csv", header = TRUE) %>%
+  dplyr::select(ComID, StreamOrde) %>%
+  rename(COMID = ComID)
+st_area01<-read.csv("/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo1.csv", header = TRUE) %>%
+  dplyr::select(COMID, LENGTHKM)
+st_order04<-read.csv("/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA4.csv", header = TRUE) %>%
+  dplyr::select(ComID, StreamOrde) %>%
+  rename(COMID = ComID)
+st_area04<-read.csv("/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo4.csv", header = TRUE) %>%
+  dplyr::select(COMID, LENGTHKM)
+st_order07<-read.csv("/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA7.csv", header = TRUE) %>%
+  dplyr::select(ComID, StreamOrde) %>%
+  rename(COMID = ComID)
+st_area07<-read.csv("/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo7.csv", header = TRUE) %>%
+  dplyr::select(COMID, LENGTHKM)
+st_order10U<-read.csv("/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA10U.csv", header = TRUE) %>%
+  dplyr::select(ComID, StreamOrde) %>%
+  rename(COMID = ComID)
+st_area10U<-read.csv("/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo10U.csv", header = TRUE) %>%
+  dplyr::select(COMID, LENGTHKM)
+st_order10L<-read.csv("/Users/katelynking/Desktop/NHDmed_flowlines_all/FlowlineVAA10L.csv", header = TRUE) %>%
+  dplyr::select(ComID, StreamOrde) %>%
+  rename(COMID = ComID)
+st_area10L<-read.csv("/Users/katelynking/Desktop/NHDmed_flowlines_all/Flowlineinfo10L.csv", header = TRUE) %>%
+  dplyr::select(COMID, LENGTHKM)
+
 #combine all order data of the HUCS
 HUC_order<-gtools::smartbind(st_order01, st_order04, st_order07, st_order10U, st_order10L) 
 
 #combine all area data of the HUCS
-#HUC_area<-gtools::smartbind(st_area01, st_area04, st_area07, st_area10U, st_area10L) 
+HUC_area<-gtools::smartbind(st_area01, st_area04, st_area07, st_area10U, st_area10L) 
 
-stream_order<-left_join(stream_uniq, HUC_order, by = c("COMIDv2_JR" = "ComID") ) %>%
-                left_join(HUC_area, by = c("COMIDv2_JR" = "COMID"))
+# pull out unique reaches and join 
+stream_uniq<-streamsall[!duplicated(paste(streamsall$COMIDv2_JR)),] #1571 
+stream_order<-left_join(stream_uniq, HUC_order, by = c("COMIDv2_JR" = "COMID") ) %>%
+                left_join(HUC_area, by = c("COMIDv2_JR" = "COMID")) %>%
+                dplyr::select(COMIDv2_JR, StreamOrde, LENGTHKM)
 
-stream_order_info<-stream_order[!duplicated(paste(stream_order$COMIDv2_JR)),] %>%
-  dplyr::select(COMIDv2_JR, lat, lon, samp_year, STATE_AB, obs_spec, HU4_ZoneID, HU8_ZoneID, HU12_ZoneID, exp_rich, StreamOrde)
-
-stream_order_info<-stream_order_info[!(is.na(stream_order_info$StreamOrde)),] 
-stream_order_info$order_class<-sapply(stream_order_info$StreamOrde, function(x) {
-  if(x == '1') {'HW'}
+stream_order_info<-stream_order[!(is.na(stream_order$StreamOrde)),] # only 4 streams without order
+stream_order_info$CLASS<-sapply(stream_order_info$StreamOrde, function(x) {
+  if(x == '1') {'HW_stream'}
   else {
-    if(x == '2') {'HW'}
+    if(x == '2') {'HW_stream'}
     else {
-      if(x == '3') {'MID'}
+      if(x == '3') {'MID_stream'}
       else {
-        if(x== '4') {'MID'}
+        if(x== '4') {'MID_stream'}
         else {
-          if(x== '5') {'MID'}
+          if(x== '5') {'MID_stream'}
           else {
             if(x== '6') {'RIVER'}
             else {
@@ -251,50 +275,49 @@ stream_order_info$order_class<-sapply(stream_order_info$StreamOrde, function(x) 
                 if(x== '8') {'RIVER'}
               }}}}}}}})
 
-barchart(stream_order_info$order_class)
-summary(as.factor(stream_order_info$order_class))
+barchart(stream_order_info$CLASS)
+stream_order_info$CLASS<-as.factor(stream_order_info$CLASS)
 
+stream_new<-left_join(streamsall, stream_order_info)
 
-#add in stream area 
-stream_dim<-dplyr::select(stream_data, COMIDv2_JR, samp_length, width)
-stream_dim<-stream_dim[!duplicated(paste(stream_dim$COMIDv2_JR)),]
-stream_area<-inner_join(stream_order_info, stream_dim)
+write.csv(stream_new, "Datasets/stream_data_QAQC.csv", row.names = FALSE)
 
-#get more widths with google maps ## read in document that was manually filled in with stream widths (m)
-stream_width<-read.csv("/Users/katelynking/Desktop/Chap 2 Fish/stream_width.csv", header = TRUE) %>%
-  dplyr::select(COMIDv2_JR, width)
-
-stream_widthnew<-left_join(stream_area, stream_width, by="COMIDv2_JR")
-stream_widthnew$width<-ifelse(is.na(stream_widthnew$width.x), stream_widthnew$width.y, stream_widthnew$width.x) #if the first width is na, then fill in with manual width, else use the first width
-stream_widthnew$area<-(stream_widthnew$samp_length*.001)*(stream_widthnew$width*.001) #convert to km and then multiply
-
-write.csv(stream_widthnew, 'Datasets/stream_reach_info.csv', row.names = FALSE )
 
 #------ Step 4: sub-setting independent streams -------
-stream_order_info<-read.csv('Datasets/stream_reach_info.csv')
 #pull out the stream with the most observations of species from HUC 12s so that I don't have streams from the same watershed 
-streams_subset<-do.call(rbind, lapply(split(stream_order_info, stream_order_info$HU12_ZoneID), function(x) {return(x[which.max(x$obs_spec),])}))
+stream_w_order<-stream_new[!(is.na(stream_new$StreamOrde)),]
+uniq_reaches<-stream_w_order[!duplicated(paste(stream_w_order$COMIDv2_JR)),] 
+streams_sub<-do.call(rbind, lapply(split(uniq_reaches, uniq_reaches$HU12_ZoneID), function(x) {return(x[which.max(x$obs_spec),])})) 
+stream_sub_ids<-dplyr::select(streams_sub, COMIDv2_JR)
+streams_subset<-left_join(stream_sub_ids, stream_new)
 
-#random stratified by HUC12; pull one stream reach from each HUC12
-#set.seed(1)
-#out2 <- as.data.frame(stream_order_info %>%
- #group_by(HU12_ZoneID) %>%
-    #sample_n(1))
+#854 subset of streams 
+write.csv(streams_subset, "Datasets/streams_subset.csv", row.names = FALSE)
+streams_subset<-read.csv("Datasets/streams_subset.csv", header=TRUE)
 
-summary(as.factor(streams_subset$order_class))
+#add in area 
+HW_width<-read.csv("/Users/katelynking/Desktop/Chap 2 Fish/Fish streams/stream_data_subsets/HW_streams.csv", header = TRUE) %>%
+  dplyr::select(COMIDv2_JR, width_m)
+midriv_width<-read.csv("/Users/katelynking/Desktop/Chap 2 Fish/Fish streams/stream_data_subsets/mid_riv.csv", header = TRUE) %>%
+  dplyr::select(COMIDv2_JR, width_m)
 
-#subsample headwater streams from WI and ME
-#MI_IA_NH<-filter(out2, STATE_AB =="MI" | STATE_AB =="IA" | STATE_AB =="NH") #keep other states' datasets 
-#ME_WI<-filter(out2, STATE_AB =="ME" | STATE_AB =="WI")
-#ME_WI_HW<-filter(ME_WI, order_class == "HW") #pull out headwater 
-#ME_WI_MR<-filter(ME_WI, order_class == "MID" | order_class == "RIVER") #keep mid and rivers 
+streamwidth<-gtools::smartbind(HW_width, midriv_width)
+stream_w_widths<-left_join(streams_subset, streamwidth)
 
-#set.seed(1)
-#out3 <- as.data.frame(ME_WI_HW %>%
-#  group_by(STATE_AB) %>%
-#  sample_n(30))
+stream_w_widths$area<-(stream_w_widths$width_m*.001)*(stream_w_widths$LENGTHKM) #convert to km and then multiply
 
-#streams_subset<-gtools::smartbind(MI_IA_NH, ME_WI_MR, out3)
-#summary(as.factor(streams_subset$order_class))
+write.csv(stream_w_widths, 'Datasets/stream_w_area.csv', row.names = FALSE )
+
+streams_subset<-stream_w_widths
+
+#streams<-left_join(streams_subset, stream_width)
+#HW_stream<-streams[!duplicated(paste(streams$COMIDv2_JR)),]%>%
+ # filter(CLASS == "HW_stream")
+#HW_stream <- HW_stream[!(is.na(HW_stream$width)),]
+#write.csv(HW_stream, "/Users/katelynking/Desktop/HW_streams.csv", row.names = FALSE)
+
+#big_stream<-streams[!duplicated(paste(streams$COMIDv2_JR)),]%>%
+ # filter(CLASS == "MID_stream" | CLASS == "RIVER")
+#write.csv(big_stream, "/Users/katelynking/Desktop/bigger_streams.csv", row.names = FALSE)
 
 
