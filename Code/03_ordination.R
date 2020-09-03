@@ -23,7 +23,7 @@ L_dat <- L_dat %>%
   mutate(CLASS = case_when(CLASS == 'DR_LakeStream' ~ 'DR_lake_lake',   #if ~ then 
                            CLASS == 'DR_Stream' ~ 'DR_lake',
                            CLASS == 'Headwater' ~ 'HW_lake',
-                           CLASS == 'Isolated' ~ 'ISO_lake',
+                           CLASS == 'Isolated' ~ 'ISO_lake'
                               )) 
 L_dat$CLASS<-as.factor(L_dat$CLASS)
 
@@ -52,7 +52,7 @@ lakenewformat<-pivot_wider(data= lakes2, #559
 lakenewformat<-subset(lakenewformat, select = -c(SITE_ID))
 lakenewformat[lakenewformat > 0] <- 1 
 L_col.sums<-stack(colSums(lakenewformat)/559*100) #sum the number of occurrences and divide by total number of lakes sampled
-common_lake<-filter(L_col.sums, values > 5)  #38 with 5% 
+common_lake<-filter(L_col.sums, values > 5)  #38 species with 5% 
 L_subsp<-dplyr::left_join(common_lake, L_dat, by = c("ind" = "SPP_CODE_new"))
 names(L_subsp)[names(L_subsp) == "ind"] <- "SPP_CODE_new"
 
@@ -66,12 +66,21 @@ streamnewformat<-subset(streamnewformat, select = -c(SITE_ID))
 streamnewformat[streamnewformat > 0] <- 1 
 
 S_col.sums<-stack(colSums(streamnewformat)/854*100) #sum the number of occurrences and divide by total number of lakes sampled
-common_stream<-filter(S_col.sums, values > 5)  #48 with 5% 
+common_stream<-filter(S_col.sums, values > 5)  #48 species with 5% 
 S_subsp<-dplyr::left_join(common_stream, S_dat, by = c("ind" = "SPP_CODE_new"))
 names(S_subsp)[names(S_subsp) == "ind"] <- "SPP_CODE_new"
 
 allecos<-gtools::smartbind(L_dat, S_dat) 
 alleco_subsp<-gtools::smartbind(L_subsp, S_subsp) 
+
+alleco_subsp <- alleco_subsp %>%
+  mutate(Region = case_when(STATE == 'IA' ~ "MW",   #if ~ then 
+                            STATE =='ME' ~ "NE",
+                            STATE == 'MI' ~ "MW",
+                            STATE == 'WI' ~ "MW",
+                            STATE =='NH' ~"NE"
+  )) 
+alleco_subsp$Region<-as.factor(alleco_subsp$Region)
 
 #62 common sp
 distinct(alleco_subsp, SPP_CODE_new)
@@ -84,16 +93,16 @@ library("factoextra")
 # organize data presence absence 
 alleco_subsp$CLASS<-ordered(alleco_subsp$CLASS, levels=c('ISO_lake', 'HW_lake', 'DR_lake', 'DR_lake_lake',	'HW_stream', 'MID_stream', 'RIVER'))
 
-fish2<-subset(alleco_subsp, select = -c(CLASS, Type, values, STATE)) 
+fish2<-subset(alleco_subsp, select = -c(CLASS, Type, values, STATE, Region)) 
 allnewformat<-pivot_wider(data= fish2, 
                           names_from = SPP_CODE_new, 
                           values_from = TOTAL_COUNT, 
                           values_fill = list(TOTAL_COUNT = 0), #replace NAs with 0
                           values_fn = list(TOTAL_COUNT = sum)) #adds up abundances if more than one occurence of a species is within a waterbody
 presabs <- subset( allnewformat, select = -SITE_ID )
-presabs[presabs > 0] <- 'yes'    #### could try occurrences?
-presabs[presabs == 0] <- 'no' 
-presabs[,] <- data.frame(apply(presabs[,], 2, as.factor))
+presabs[presabs > 0] <- 1  #### could try occurrences?
+presabs<-as.data.frame(ifelse(presabs == 0, "No", "Yes"))
+
 summary(presabs)[, 1:4]
 for (i in 1:4) {
   plot(presabs[,i], main=colnames(presabs)[i],
@@ -102,12 +111,14 @@ for (i in 1:4) {
 
 # need conny ids 
 names<-dplyr::select(allnewformat, SITE_ID)
-connyclass<-dplyr::select(alleco_subsp, SITE_ID, CLASS, STATE)
+connyclass<-dplyr::select(alleco_subsp, SITE_ID, CLASS, STATE, Region)
 conny<-connyclass [!duplicated(paste(connyclass$SITE_ID)),] #
 connyids<-left_join(names, conny) #want them in the same order as the sites 
 
 #run MCA 
 res.mca <- MCA(presabs, graph = FALSE)
+
+test<-MCA(presabs, quali.sup = connyids$CLASS, graph = FALSE) #adding in connny as a variabel
 
 #percentage of explained variance screeplot 
 fviz_screeplot(res.mca, addlabels = TRUE, ylim = c(0, 45)) #show screeplot
@@ -124,26 +135,51 @@ fviz_contrib(res.mca, choice = "var", axes = 2, top = 5)
 fviz_contrib(res.mca, choice = "var", axes = 1:2, top = 5)
 
 #add in ellipse base on conny type 
-Fig5<-fviz_mca_ind(res.mca, 
+Fig5a<-fviz_mca_ind(res.mca, 
              label = "none", # hide individual labels
              habillage = connyids$CLASS, # color by groups 
              addEllipses = TRUE,
              palette = c("#1b9e77", "#e6ab02",  "#7570b3", "#e7298a",  "#d95f02", "#66a61e", "#a6761d"),
              ggtheme = theme_minimal(), 
-             title = '') 
-
-cowplot::save_plot("Figures/Fig5.png", Fig5, base_width = 7,
-                   base_height = 5, dpi=600)
+             title = '') + 
+  theme(legend.position = c(.9, .85))
 
 
-#add in ellipse base on states
-fviz_mca_ind(res.mca, 
+#add in ellipse base on region (northeast vs midwest)
+Fig5b<-fviz_mca_ind(res.mca, 
              label = "none", # hide individual labels
-             habillage = connyids$STATE, # color by groups 
+             habillage = connyids$Region, # color by groups 
              addEllipses = TRUE, 
              ggtheme = theme_minimal(), 
-             title = '') 
+             title = '') + 
+  theme(legend.position = c(.9, .85))
 
+Fig5<-cowplot::plot_grid(Fig5a, Fig5b,
+                         align = 'vh',
+                         labels = c("A", "B")
+)
+cowplot::save_plot("Figures/Fig5.png", Fig5, base_width = 9,
+                   base_height = 5, dpi=600)
+
+############## SIMPER ##################
+#looks at pairs and tells you what is the % that a species is contributing to differences, give you significance also
+#simper(comm, group, permutations = 0, trace = FALSE, 
+#      parallel = getOption("mc.cores"), ...)
+## S3 method for class 'simper'
+#summary(object, ordered = TRUE,
+#       digits = max(3,getOption("digits") - 3), ...)
+
+
+# SIMPER analysis ## 100 permutations takes a while... consider dropping for exploratory 
+library(vegan)
+#you have to use abundances
+sim_out<-simper(presabs, connyids$CLASS, permutations=100) #
+table<-summary(sim_out)
+table$DR_lake_lake_ISO_lake  # top species are actually quite common in both types, probably caused by variation in sp abund. 
+#the most abundant sp usually have highest variances and high contributions even when they do not differ among groups. 
+table$ISO_lake_HW_stream
+table$HW_stream_RIVER
+table$ISO_lake_MID_stream
 
 #### occurrence rates by class for the supp table ####
 DR_LL<-filter(L_dat, CLASS== "DR_lake_lake")
