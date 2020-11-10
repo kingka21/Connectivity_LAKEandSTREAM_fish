@@ -6,12 +6,12 @@ This repository has the data and code that supports the manuscript: King, K., Br
 The manuscript takes an integrated approach that includes both lake and stream fish communities and studies how surface water connectivity affects fish species richness and composition. 
 
 
-**The 'Code' folder includes the following:** 
-03_Diversity_analysis that includes the methods for ANOVA, ANCOVA, dissimilarity, and PERMANOVA 
-04_ordination that includes methods for the Correspondence Analysis
+**The 'Code' folder includes the following:** \
+03_Diversity_analysis that includes the methods for ANOVA, ANCOVA, dissimilarity, and PERMANOVA \
+04_ordination that includes methods for the Correspondence Analysis\
 
-**The 'Datasets' folder includes the following:** 
-lakes_withoutWI.csv which is the lake fish data 
+**The 'Datasets' folder includes the following:** \
+lakes_withoutWI.csv which is the lake fish data \
 streams_withoutWI.csv which is the stream fish data 
 
 **The 'Figures' folder includes the figures made in R for the manuscript**
