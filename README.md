@@ -11,8 +11,8 @@ The manuscript takes an integrated approach that includes both lake and stream f
 **04_ordination** that includes methods for the Correspondence Analysis
 
 **The 'Datasets' folder includes the following:** \
-**lakes_withoutWI.csv** which is the lake fish data. See the Metadata.doc file which describes the variables. Column names are the same as the streams data. \
-**streams_withoutWI.csv** which is the stream fish data. See the Metadata.doc file which describes the variables. Column names are the same as the lakes data. 
+**lakes_withoutWI.csv** which is the lake fish data without Wisconsin data. See the Metadata.doc file which describes the variables. Column names are the same as the streams data. \
+**streams_withoutWI.csv** which is the stream fish data without Wisconsin data. See the Metadata.doc file which describes the variables. Column names are the same as the lakes data. 
 
 **The 'Figures' folder includes the figures made in R for the manuscript**
 
