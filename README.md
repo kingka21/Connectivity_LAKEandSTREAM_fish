@@ -1,7 +1,7 @@
 # Surface water connectivity affects lake and stream fish species richness and composition 
 
 This repository has the data and code that supports the manuscript: **King, K., Bremigan, M.T., Infante, D., and Cheruvelil, K.S. 2020. Surface water connectivity affects lake and stream fish species richness and composition. Canadian Journal of Fisheries and Aquatic Sciences.**  
-*Note that Wisconsin has data sharing restrictions for data, therefore, these data were not published and if the code is run the results may differ from the manuscript due to WI data being excluded. However, this code reflects the code used for analysis of the manuscript. *
+*Note that Wisconsin has data sharing restrictions for data, therefore, these data were not published. This code reflects the code used for analysis in the manuscript, however, the results may differ from the manuscript due to WI data being excluded. *
 
 The manuscript takes an integrated approach that includes both lake and stream fish communities and studies how surface water connectivity affects fish species richness and composition. 
 
