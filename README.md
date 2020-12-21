@@ -1,5 +1,5 @@
 # Surface water connectivity affects lake and stream fish species richness and composition 
-
+[![DOI](https://zenodo.org/badge/140985788.svg)](https://zenodo.org/badge/latestdoi/140985788)
 This repository has the data and code that supports the manuscript: **King, K., Bremigan, M.T., Infante, D., and Cheruvelil, K.S. 2020. Surface water connectivity affects lake and stream fish species richness and composition. Canadian Journal of Fisheries and Aquatic Sciences.**  
 *Note that Wisconsin has data sharing restrictions for data, therefore, these data were not published. This code reflects the code used for analysis in the manuscript, however, the results may differ from the manuscript due to WI data being excluded. *
 
